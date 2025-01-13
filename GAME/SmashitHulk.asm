@@ -27,5 +27,8 @@ LOOP1: 	beq t1,t2,DONE		# Se for o último endereço então sai do loop
 	addi s1,s1,4
 	j LOOP1			# volta a verificar
 DONE:
+
+
+END:
 	li a7, 10
 	ecall
