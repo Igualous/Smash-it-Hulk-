@@ -1,6 +1,8 @@
 .data
 # inclusao dos audios
 
+
+
 #inclusao das imagens
 
 .include "../DATA/fundo1.data"
@@ -14,6 +16,7 @@
 .include "../DATA/projetil.data"
 .include "../DATA/portal.data"
 
+#############  SETUP INICIAL
 hulkX:
 .word 90
 hulkY:
@@ -23,8 +26,9 @@ lokiX:
 .word 130
 lokiY:
 .word 30
-
+##############
 .text
+
 # Carrega o fundo1
 	li t1,0xFF000000	# endereco inicial da Memoria VGA - Frame 0
 	li t2,0xFF012C00	# endereco final 
@@ -39,14 +43,14 @@ LOOP1: 	beq t1,t2,DONE		# Se for o �ltimo endere�o ent�o sai do loop
 DONE:
 
 
-# renderizar hulk na tela
+# Renderiza Hulk na tela na posicao x = a1, y = a2
 	la a0, hulk_parado
 	lw a1, hulkX
 	lw a2, hulkY
 	
 	jal renderImage
 	
-# renderizar loki na tela
+# Renderiza Loki na tela na posicao x = a1, y = a2
 	la a0, loki_parado
 	lw a1, lokiX
 	lw a2, lokiY
