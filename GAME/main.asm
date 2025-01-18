@@ -15,7 +15,7 @@
 # inclusao dos audios
 # Numero de Notas a tocar
 NUM: .word 112
-# lista de nota,duração,nota,duração,nota,duração,...
+# lista de nota,duraï¿½ï¿½o,nota,duraï¿½ï¿½o,nota,duraï¿½ï¿½o,...
 
 NOTAS:	#Tema 1(8 notas por linha = 16)
 	43,2500,44,1200,45,1200,46,1200,45,1200,44,1200,39,600,41,600,
@@ -29,7 +29,7 @@ NOTAS:	#Tema 1(8 notas por linha = 16)
 	63,300,60,300,60,300,63,300,63,300,60,300,60,300,63,300,
 	63,300,60,300,60,300,63,300,63,300,60,300,60,300,63,300,
 	46,300,48,800,48,300,50,800,58,300,60,800,60,300,62,800,
-	#Refrão(14 notas por linha = 28)
+	#Refrï¿½o(14 notas por linha = 28)
 	60,2500,60,500,60,750,67,250,65,2010,63,1000,62,1000,60,2500,60,500,60,750,67,250,69,1000,65,1000,67,2010,
 	72,2500,72,500,72,750,79,250,77,2010,75,1000,74,1000,72,2500,72,500,72,750,79,250,81,1000,77,1000,79,4000,
 #.include "/midi.s"
@@ -58,9 +58,9 @@ NOTAS:	#Tema 1(8 notas por linha = 16)
 
 #############  SETUP INICIAL
 
-# posicao inicial
+# posicoes inicial
 hulkX:
-.word 90
+.word 85
 hulkY:
 .word 200
 
@@ -69,7 +69,7 @@ lokiX:
 lokiY:
 .word 20
 
-janelaX:
+janelaX: # endereco da janela[0][0]
 .word 90
 janelaY:
 .word 70
@@ -89,11 +89,11 @@ addi t1,t1,4        # soma 4 ao endere?o
 addi s1,s1,4
 j LOOP5
 mainMenuSelect:
-        # Código abaixo obtém a entrada
-        li    t0, 0xFF200000 # carrega em t0 o endereço do status do teclado.
+        # Cï¿½digo abaixo obtï¿½m a entrada
+        li    t0, 0xFF200000 # carrega em t0 o endereï¿½o do status do teclado.
         lb     t1, 0(t0) # carrega o status do teclado em t1.
 
-        andi    t1, t1, 1 # isso é um processo de mascaramento. Apenas queremos saber sobre o primeiro bit de t1, que indica se alguma tecla foi pressionada.
+        andi    t1, t1, 1 # isso ï¿½ um processo de mascaramento. Apenas queremos saber sobre o primeiro bit de t1, que indica se alguma tecla foi pressionada.
 
         beq    t1, zero, mainMenuSelect 
 
@@ -107,7 +107,9 @@ mainMenuSelect:
         j    END
     continueMMSelect:
         j    mainMenuSelect
-# Carrega o fundo1
+        
+        
+# Carrega a fase 1
 CARREGA_FUNDO1:
 	li t1,0xFF000000	# endereco inicial da Memoria VGA - Frame 0
 	li t2,0xFF012C00	# endereco final 
@@ -120,17 +122,7 @@ LOOP1: 	beq t1,t2,DONE		# Se for o ultimo endereco entï¿½o sai do loop
 	addi s1,s1,4
 	j LOOP1			# volta a verificar
 DONE:
-
-
-# Renderiza Loki na tela na posicao x = a1, y = a2
-PRINT_LOKI:
-	la a0, loki_parado
-	lw a1, lokiX
-	lw a2, lokiY
 	
-	jal renderImage
-	
-
 # Renderiza as janelas
 PRINT_JANELAS:
 	la a0, janela
@@ -174,9 +166,18 @@ PRINT_JANELAS:
 	lw a1, janelaX
 	addi a1, a1, 50
 	lw a2, janelaY
-	addi a2, a2, 120
+	addi a2, a2, 115
+	
 	jal renderImage
-
+	
+# Renderiza Loki na tela na posicao inicial
+PRINT_LOKI:
+	la a0, loki_parado
+	lw a1, lokiX
+	lw a2, lokiY
+	
+	jal renderImage
+	
 # Renderiza Hulk na posicao inicial
 PRINT_HULK:
 	la a0, hulk_parado
@@ -185,46 +186,68 @@ PRINT_HULK:
 	
 	jal renderImage
 	
+###### GAME LOOP PRINCIPAL #########
+GAME_LOOP:
+	# 1: verifica se há tecla pressionada
+	jal KEY
+	# 2: verifica colisoes
+	# 3: movimentacoes de personagem
 	
+	# 4: printa o player
+
+	j GAME_LOOP
+###### ################### #########	
 END:
 	li a7, 10
-	ecall	
-	
-#### RENDERIZACAO DE IMAGENS / PARAMETROS: a0 = arquivo.data; a1 = X; a2 = Y
+	ecall
+		
+#### RENDERIZACAO DE IMAGENS 
 renderImage:
-# Argumentos da funï¿½ï¿½o:
-	# a0 contï¿½m o endereï¿½o inicial da imagem
-	# a1 contï¿½m a posiï¿½ï¿½o X da imagem
-	# a2 contï¿½m a posiï¿½ï¿½o Y da imagem
+	# Argumentos da função:
+	# a0 contém o endereço inicial da imagem
+	# a1 contém a posição X da imagem
+	# a2 contém a posição Y da imagem
 	
-	lw	s0, 0(a0) # Guarda em s0 a largura da imagem
-	lw	s1, 4(a0) # Guarda em s1 a altura da imagem
 	
-	mv	s2, a0 # Copia o endereï¿½o da imagem para s2
+	lw		s0, 0(a0) # Guarda em s0 a largura da imagem
+	lw		s1, 4(a0) # Guarda em s1 a altura da imagem
+	
+	mv		s2, a0 # Copia o endereço da imagem para s2
 	addi	s2, s2, 8 # Pula 2 words - s2 agora aponta para o primeiro pixel da imagem
 	
-	li	s3, 0xff000000 # carrega em s3 o endereï¿½o do bitmap display
+	li		s3, 0xff000000 # carrega em s3 o endereço do bitmap display
 	
-	li		t1, 320 # t1 ï¿½ o tamanho de uma linha no bitmap display
-	mul		t1, t1, a2 # multiplica t1 pela posiï¿½ï¿½o Y desejada no bitmap display.
-	# Multiplicamos 320 pela posiï¿½ï¿½o desejada para obter um offset em relaï¿½ï¿½o ao endereï¿½o inicial do bimap display correspondente ï¿½ linha na qual queremos desenhar a imagem. Basta agora obter mais um offset para chegar atï¿½ a coluna que queremos. Isso ï¿½ mais simples, basta adicionar a posiï¿½ï¿½o X.
+	li		t1, 320 # t1 é o tamanho de uma linha no bitmap display
+	mul		t1, t1, a2 # multiplica t1 pela posição Y desejada no bitmap display.
+	# Multiplicamos 320 pela posição desejada para obter um offset em relação ao endereço inicial do bimap display correspondente à linha na qual queremos desenhar a imagem. Basta agora obter mais um offset para chegar até a coluna que queremos. Isso é mais simples, basta adicionar a posição X.
 	add		t1, t1, a1
-	# t1 agora tem o offset completo, basta adicionï¿½-lo ao endereï¿½o do bitmap.
+	# t1 agora tem o offset completo, basta adicioná-lo ao endereço do bitmap.
 	add		s3, s3, t1
-	# O endereï¿½o em s3 agora representa exatamente a posiï¿½ï¿½o em que o primeiro pixel da nossa imagem deve ser renderizado.
+	# O endereço em s3 agora representa exatamente a posição em que o primeiro pixel da nossa imagem deve ser renderizado.
+
+	blt		a1, zero, endRender # se X < 0, não renderizar
+	blt		a2, zero, endRender # se Y < 0, não renderizar
+	
+	li		t1, 320
+	add		t0, s0, a1
+	bgt		t0, t1, endRender # se X + larg > 320, não renderizar
+	
+	li		t1, 240
+	add		t0, s1, a2
+	bgt		t0, t1, endRender # se Y + alt > 240, não renderizar
 	
 	li		t1, 0 # t1 = Y (linha) atual
 	lineLoop:
-		bge		t1, s1, endRender # Se terminamos a ï¿½ltima linha da imagem, encerrar
+		bge		t1, s1, endRender # Se terminamos a última linha da imagem, encerrar
 		li		t0, 0 # t0 = X (coluna) atual
 		
 		columnLoop:
-			bge		t0, s0, columnEnd # Se terminamos a linha atual, ir pra prï¿½xima
+			bge		t0, s0, columnEnd # Se terminamos a linha atual, ir pra próxima
 			
 			lb		t2, 0(s2) # Pega o pixel da imagem
-			sb		t2, 0(s3) # Pï¿½e o pixel no display
+			sb		t2, 0(s3) # Põe o pixel no display
 			
-			# Incrementa os endereï¿½os e o contador de coluna
+			# Incrementa os endereços e o contador de coluna
 			addi	s2, s2, 1
 			addi	s3, s3, 1
 			addi	t0, t0, 1
@@ -232,12 +255,58 @@ renderImage:
 			
 		columnEnd:
 		
-		addi	s3, s3, 320 # prï¿½xima linha no bitmap display
-		sub		s3, s3, s0 # reposiciona o endereï¿½o de coluna no bitmap display (subtraindo a largura da imagem). Note que essa subtraï¿½ï¿½o ï¿½ necessï¿½ria - verifique os efeitos da ausï¿½ncia dela vocï¿½ mesmo, montando esse cï¿½digo.
+		addi	s3, s3, 320 # próxima linha no bitmap display
+		sub		s3, s3, s0 # reposiciona o endereço de coluna no bitmap display (subtraindo a largura da imagem). Note que essa subtração é necessária - verifique os efeitos da ausência dela você mesmo, montando esse código.
 		
 		addi	t1, t1, 1 # incrementar o contador de altura
 		j		lineLoop
-		endRender:
-ret
+		
+	endRender:
+	
+	ret
+### Apenas verifica se há tecla pressionada (ideal para jogo dinamico)
+KEY:	li t1,0xFF200000		# carrega o endereço de controle do KDMMIO
+	lw t0,0(t1)			# Le bit de Controle Teclado
+	andi t0,t0,0x0001		# mascara o bit menos significativo
+   	beq t0,zero,FIM_KEY   	   	# Se não há tecla pressionada então vai para FIM
+  	lw t2,4(t1)  			# le o valor da tecla tecla
+	sw t2,12(t1)  			# escreve a tecla pressionada no display (controle)
+	
+	li t0,'w'
+	beq t2,t0,CHAR_CIMA		# se tecla pressionada for 'w', chama CHAR_CIMA
+	
+	li t0,'a'
+	beq t2,t0,CHAR_ESQ		# se tecla pressionada for 'a', chama CHAR_ESQ
+	
+	li t0,'s'
+	beq t2,t0,CHAR_BAIXO		# se tecla pressionada for 's', chama CHAR_BAIXO
+	
+	li t0,'d'
+	beq t2,t0,CHAR_DIR		# se tecla pressionada for 'd', chama CHAR_DIR
+FIM_KEY:	ret				# retorna
+
+# FUNCOES DE MOVIMENTACAO
+CHAR_CIMA:
+	la a0, hulk_parado
+	lw a1, hulkX
+	lw a2, hulkY
+	addi a2, a2, -60
+	
+	jal renderImage
+	ret
+CHAR_ESQ:
+	
+	ret
+CHAR_BAIXO:
+
+	ret
+CHAR_DIR:
+	la a0, hulk_parado
+	lw a1, hulkX
+	lw a2, hulkY
+	addi a1, a1, 50
+	jal renderImage
+	j GAME_LOOP
+	ret
 
 
