@@ -57,9 +57,7 @@ NOTAS:	#Tema 1(8 notas por linha = 16)
 .include "../DATA/tela.data"
 
 #############  SETUP INICIAL
-
-# posicoes inicial
-
+# posicoes iniciais
 
 HULK_POS:            .word 85,200
 #Aqui, a posição inicial de hulk foi declarada como uma word que contem suas 
@@ -75,10 +73,7 @@ OLD_HULK_POS:    .word 85,200
 
 #ATENCAO!!!
 #quando formos mexer no vilao, tambem deveremos mudar isso para ficar como o padrao do hulk
-lokiX:
-.word 130
-lokiY:
-.word 20
+LOKI_POS:	.word 130,20
 
 janelaX: # endereco da janela[0][0]
 .word 90
@@ -92,19 +87,19 @@ janelaY:
 li t1,0xFF000000    # endereco inicial da Memoria VGA - Frame 0
 li t2,0xFF012C00    # endereco final 
 la t4, tela          # endere?o dos dados da tela na memoria
-addi t4,t4,8        # primeiro pixels depois das informa??es de nlin ncol
-LOOP5:     beq t1,t2, mainMenuSelect        # Se for o ?ltimo endere?o ent?o sai do loop
+addi t4,t4,8        # primeiro pixels depois das informacoes de nlin ncol
+LOOP5:     beq t1,t2, mainMenuSelect        # Se for o ultimo endereco entao sai do loop
 lw t3,0(t4)        # le um conjunto de 4 pixels : word
 sw t3,0(t1)        # escreve a word na mem?ria VGA
 addi t1,t1,4        # soma 4 ao endere?o
 addi t4,t4,4
 j LOOP5
 mainMenuSelect:
-        # Cï¿½digo abaixo obtï¿½m a entrada
+        # Codigo abaixo obtem a entrada
         li    t0, 0xFF200000 # carrega em t0 o endereï¿½o do status do teclado.
         lb     t1, 0(t0) # carrega o status do teclado em t1.
 
-        andi    t1, t1, 1 # isso ï¿½ um processo de mascaramento. Apenas queremos saber sobre o primeiro bit de t1, que indica se alguma tecla foi pressionada.
+        andi    t1, t1, 1 # isso eh um processo de mascaramento. Apenas queremos saber sobre o primeiro bit de t1, que indica se alguma tecla foi pressionada.
 
         beq    t1, zero, mainMenuSelect #se a tecla 1 não foi pressionada, volta a verificar até que a mesma seja acionada
 
@@ -186,8 +181,9 @@ PRINT_JANELAS:
 # Renderiza Loki na tela na posicao inicial
 PRINT_LOKI:
 	la a0, loki_parado 
-	lw a1, lokiX
-	lw a2, lokiY
+	la t0, LOKI_POS
+	lw a1, 0(t0)
+	lw a2, 4(t0)
 	
 	jal renderImage
 	
@@ -195,7 +191,7 @@ PRINT_LOKI:
 PRINT_HULK:
 	la a0, hulk_parado #carrega o tamanho da imagem em a0
 	la t0, HULK_POS  #carrega em t0 a word que contem as posicoes xy do hulk
-	lw a1, 0(t0)  #carrega em t0 o nuemero que esta na primeira word de HULK_POS(esse numero e a posicao x)
+	lw a1, 0(t0)  #carrega em t0 o numero que esta na primeira word de HULK_POS(esse numero e a posicao x)
 	lw a2, 4(t0)  #carrega em t0 o numero que esta na segunda word(offset da word = 4) de HULK_POS(esse numero e a posicao y)
 	
 	jal renderImage
@@ -330,8 +326,8 @@ FIM_KEY:	ret				# retorna
 #Os registradores a0,a1 e a2 sao os argumentos passados para a funcao print
 
 CHAR_CIMA:
-	
-	la a0, hulk_parado #carrega as dimensoes do hulk em a0
+
+    		la a0, hulk_parado #carrega as dimensoes do hulk em a0
 	la s6,HULK_POS #posicao atual
 	lw t2,0(s6) #passa a posicao antes do movimento para a antiga
 	lw a2, 4(s6)  #carrega em a2 a posicao y atual do personagem
