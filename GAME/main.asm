@@ -15,7 +15,7 @@
 # inclusao dos audios
 # Numero de Notas a tocar
 NUM: .word 112
-# lista de nota,dura��o,nota,dura��o,nota,dura��o,...
+# lista de nota,dura??o,nota,dura??o,nota,dura??o,...
 
 NOTAS:	#Tema 1(8 notas por linha = 16)
 	43,2500,44,1200,45,1200,46,1200,45,1200,44,1200,39,600,41,600,
@@ -29,7 +29,7 @@ NOTAS:	#Tema 1(8 notas por linha = 16)
 	63,300,60,300,60,300,63,300,63,300,60,300,60,300,63,300,
 	63,300,60,300,60,300,63,300,63,300,60,300,60,300,63,300,
 	46,300,48,800,48,300,50,800,58,300,60,800,60,300,62,800,
-	#Refr�o(14 notas por linha = 28)
+	#Refr?o(14 notas por linha = 28)
 	60,2500,60,500,60,750,67,250,65,2010,63,1000,62,1000,60,2500,60,500,60,750,67,250,69,1000,65,1000,67,2010,
 	72,2500,72,500,72,750,79,250,77,2010,75,1000,74,1000,72,2500,72,500,72,750,79,250,81,1000,77,1000,79,4000,
 #.include "/midi.s"
@@ -37,24 +37,24 @@ NOTAS:	#Tema 1(8 notas por linha = 16)
 
 #inclusao das imagens
 
-.include "../DATA/fundo1.data"
-.include "../DATA/fundo2.data"
-.include "../DATA/hulk_ativo.data"
-.include "../DATA/hulk_parado.data"
-.include "../DATA/hulk_pulando_d.data"
-.include "../DATA/hulk_pulando_e.data"
-.include "../DATA/hulk_pulando_cima.data"
-.include "../DATA/hulk_pulando_baixo.data"
-.include "../DATA/loki_ativo.data"
-.include "../DATA/loki_parado.data"
-.include "../DATA/doende.data"
-.include "../DATA/projetil.data"
-.include "../DATA/portal.data"
-.include "../DATA/janela.data"
-.include "../DATA/janela_quebrada.data"
-.include "../DATA/porta.data"
-.include "../DATA/porta_quebrada.data"
-.include "../DATA/tela.data"
+.include "fundo1.data"
+.include "fundo2.data"
+.include "hulk_ativo.data"
+.include "hulk_parado.data"
+.include "hulk_pulando_d.data"
+.include "hulk_pulando_e.data"
+.include "hulk_pulando_cima.data"
+.include "hulk_pulando_baixo.data"
+.include "loki_ativo.data"
+.include "loki_parado.data"
+.include "doende.data"
+.include "projetil.data"
+.include "portal.data"
+.include "janela.data"
+.include "janela_quebrada.data"
+.include "porta.data"
+.include "porta_quebrada.data"
+.include "tela.data"
 
 #############  SETUP INICIAL
 # posicoes iniciais
@@ -90,20 +90,20 @@ addi t4,t4,4
 j LOOP5
 mainMenuSelect:
         # Codigo abaixo obtem a entrada
-        li    t0, 0xFF200000 # carrega em t0 o endere�o do status do teclado.
+        li    t0, 0xFF200000 # carrega em t0 o endere?o do status do teclado.
         lb     t1, 0(t0) # carrega o status do teclado em t1.
 
         andi    t1, t1, 1 # isso eh um processo de mascaramento. Apenas queremos saber sobre o primeiro bit de t1, que indica se alguma tecla foi pressionada.
 
-        beq    t1, zero, mainMenuSelect #se a tecla 1 n�o foi pressionada, volta a verificar at� que a mesma seja acionada
+        beq    t1, zero, mainMenuSelect #se a tecla 1 n?o foi pressionada, volta a verificar at? que a mesma seja acionada
 
-        lb    t1, 4(t0) #ao ser pressionado, carrega 1 em t1 para fins de compara��o
+        lb    t1, 4(t0) #ao ser pressionado, carrega 1 em t1 para fins de compara??o
 
         li    t2, 0x031 #valor do 1 na tabela ASCII
         beq    t1, t2, CARREGA_FUNDO1 #se o que tiver sido registrado no teclado foi 1, carrega a fase
 
         li    t2, 0x032 #valor do 2 na tabela ASCII
-        bne    t1, t2, continueMMSelect #Se o numero digitado n�o foi 2 nem 1, volta a esperar um input valido 
+        bne    t1, t2, continueMMSelect #Se o numero digitado n?o foi 2 nem 1, volta a esperar um input valido 
         j    END #se o input tiver sido 2, encerra o programa 
     continueMMSelect:
         j    mainMenuSelect
@@ -114,11 +114,11 @@ mainMenuSelect:
 CARREGA_FUNDO1:               # carrega a imagem no frame 0
 	li t1,0xFF000000	# endereco inicial da Memoria VGA - Frame 0
 	li t2,0xFF012C00	# endereco final 
-	la t4,fundo1		# endere�o dos dados da tela na memoria
-	addi t4,t4,8		# primeiro pixels depois das informa��es de nlin ncol
-LOOP1: 	beq t1,t2,DONE		# Se for o ultimo endereco ent�o sai do loop
+	la t4,fundo1		# endere?o dos dados da tela na memoria
+	addi t4,t4,8		# primeiro pixels depois das informa??es de nlin ncol
+LOOP1: 	beq t1,t2,DONE		# Se for o ultimo endereco ent?o sai do loop
 	lw t3,0(t4)		# le um conjunto de 4 pixels : word
-	sw t3,0(t1)		# escreve a word na mem�ria VGA
+	sw t3,0(t1)		# escreve a word na mem?ria VGA
 	addi t1,t1,4		# soma 4 ao endereco
 	addi t4,t4,4
 	j LOOP1			# volta a verificar
@@ -127,6 +127,8 @@ DONE:
 	
 # Renderiza as janelas
 PRINT_JANELAS:
+        
+      
 	la t0, JANELAS_QUEBRADAS
 	
 	# janela 1
@@ -246,6 +248,7 @@ PRINT_JANELAS:
 	
 # Renderiza Loki no Bitmap
 PRINT_LOKI:
+        addi s11,s11,1
 	la a0, loki_parado 
 	la t0, LOKI_POS
 	lw a1, 0(t0)
@@ -276,7 +279,7 @@ GAME_LOOP:
        li s4, 85 #posicao X da borda esquerda, ou seja, se ele estiver na coluna 85, movimentos para a esquerda sao bloqueados
        li s5, 200 #posicao y da borda inferior, ou seja, se ele estiver na linha 200, movimentos para baixo sao bloqueados
        li s8, 185
-       li s9 80
+       li s9, 80
 	# 1: acoes do player
 	
 	jal KEY
@@ -285,8 +288,7 @@ GAME_LOOP:
 	
 	# 3: musica
 	# 4: verifica vitoria ou derrota
-	jal VER_VITORIA
-	jal VER_DERROTA
+	
 	j GAME_LOOP
 ###### ################### #########	
 END:
@@ -295,51 +297,51 @@ END:
 		
 #### RENDERIZACAO DE IMAGENS 
 renderImage:
-	# Argumentos da fun��o:
-	# a0 cont�m o endere�o inicial da imagem
-	# a1 cont�m a posi��o X da imagem
-	# a2 cont�m a posi��o Y da imagem
+	# Argumentos da fun??o:
+	# a0 cont?m o endere?o inicial da imagem
+	# a1 cont?m a posi??o X da imagem
+	# a2 cont?m a posi??o Y da imagem
 	
 	
 	lw		s0, 0(a0) # Guarda em s0 a largura da imagem
 	lw		s1, 4(a0) # Guarda em s1 a altura da imagem
 	
-	mv		s2, a0 # Copia o endere�o da imagem para s2
+	mv		s2, a0 # Copia o endere?o da imagem para s2
 	addi	s2, s2, 8 # Pula 2 words - s2 agora aponta para o primeiro pixel da imagem
 	
-	li		s3, 0xff000000 # carrega em s3 o endere�o do bitmap display frame 0
+	li		s3, 0xff000000 # carrega em s3 o endere?o do bitmap display frame 0
 	
-	li		t1, 320 # t1 � o tamanho de uma linha no bitmap display
-	mul		t1, t1, a2 # multiplica t1 pela posi��o Y desejada no bitmap display.
-	# Multiplicamos 320 pela posi��o desejada para obter um offset em rela��o ao endere�o inicial do bimap display correspondente � linha na qual queremos desenhar a imagem. Basta agora obter mais um offset para chegar at� a coluna que queremos. Isso � mais simples, basta adicionar a posi��o X.
+	li		t1, 320 # t1 ? o tamanho de uma linha no bitmap display
+	mul		t1, t1, a2 # multiplica t1 pela posi??o Y desejada no bitmap display.
+	# Multiplicamos 320 pela posi??o desejada para obter um offset em rela??o ao endere?o inicial do bimap display correspondente ? linha na qual queremos desenhar a imagem. Basta agora obter mais um offset para chegar at? a coluna que queremos. Isso ? mais simples, basta adicionar a posi??o X.
 	add		t1, t1, a1
-	# t1 agora tem o offset completo, basta adicion�-lo ao endere�o do bitmap.
+	# t1 agora tem o offset completo, basta adicion?-lo ao endere?o do bitmap.
 	add		s3, s3, t1
-	# O endere�o em s3 agora representa exatamente a posi��o em que o primeiro pixel da nossa imagem deve ser renderizado.
+	# O endere?o em s3 agora representa exatamente a posi??o em que o primeiro pixel da nossa imagem deve ser renderizado.
 
-	blt		a1, zero, endRender # se X < 0, n�o renderizar
-	blt		a2, zero, endRender # se Y < 0, n�o renderizar
+	blt		a1, zero, endRender # se X < 0, n?o renderizar
+	blt		a2, zero, endRender # se Y < 0, n?o renderizar
 	
 	li		t1, 320
 	add		t0, s0, a1
-	bgt		t0, t1, endRender # se X + larg > 320, n�o renderizar
+	bgt		t0, t1, endRender # se X + larg > 320, n?o renderizar
 	
 	li		t1, 240
 	add		t0, s1, a2
-	bgt		t0, t1, endRender # se Y + alt > 240, n�o renderizar
+	bgt		t0, t1, endRender # se Y + alt > 240, n?o renderizar
 	
 	li		t1, 0 # t1 = Y (linha) atual
 	lineLoop:
-		bge		t1, s1, endRender # Se terminamos a �ltima linha da imagem, encerrar
+		bge		t1, s1, endRender # Se terminamos a ?ltima linha da imagem, encerrar
 		li		t0, 0 # t0 = X (coluna) atual
 		
 		columnLoop:
-			bge		t0, s0, columnEnd # Se terminamos a linha atual, ir pra pr�xima
+			bge		t0, s0, columnEnd # Se terminamos a linha atual, ir pra pr?xima
 			
 			lb		t2, 0(s2) # Pega o pixel da imagem
-			sb		t2, 0(s3) # P�e o pixel no display
+			sb		t2, 0(s3) # P?e o pixel no display
 			
-			# Incrementa os endere�os e o contador de coluna
+			# Incrementa os endere?os e o contador de coluna
 			addi	s2, s2, 1
 			addi	s3, s3, 1
 			addi	t0, t0, 1
@@ -347,8 +349,8 @@ renderImage:
 			
 		columnEnd:
 		
-		addi	s3, s3, 320 # pr�xima linha no bitmap display
-		sub		s3, s3, s0 # reposiciona o endere�o de coluna no bitmap display (subtraindo a largura da imagem). Note que essa subtra��o � necess�ria - verifique os efeitos da aus�ncia dela voc� mesmo, montando esse c�digo.
+		addi	s3, s3, 320 # pr?xima linha no bitmap display
+		sub		s3, s3, s0 # reposiciona o endere?o de coluna no bitmap display (subtraindo a largura da imagem). Note que essa subtra??o ? necess?ria - verifique os efeitos da aus?ncia dela voc? mesmo, montando esse c?digo.
 		
 		addi	t1, t1, 1 # incrementar o contador de altura
 		j		lineLoop
@@ -357,15 +359,16 @@ renderImage:
 	
 	ret
 	
-### Apenas verifica se h� tecla pressionada (ideal para jogo dinamico)
-KEY:	li t1,0xFF200000		# carrega o endere�o de controle do KDMMIO
+### Apenas verifica se h? tecla pressionada (ideal para jogo dinamico)
+KEY:	li t1,0xFF200000		# carrega o endere?o de controle do KDMMIO
 	lw t0,0(t1)			# Le bit de Controle Teclado
 	andi t0,t0,0x0001		# mascara o bit menos significativo
-   	beq t0,zero,FIM_KEY   	   	# Se n�o h� tecla pressionada ent�o vai para FIM
+   	beq t0,zero,FIM_KEY   	   	# Se n?o h? tecla pressionada ent?o vai para FIM
   	lw t2,4(t1)  			# le o valor da tecla tecla
 	sw t2,12(t1)  			# escreve a tecla pressionada no display (controle)
 	
 	li t0,'w'
+	
 	beq t2,t0,CHAR_CIMA		# se tecla pressionada for 'w', chama CHAR_CIMA
 	
 	li t0,'a'
@@ -388,8 +391,16 @@ FIM_KEY:	ret				# retorna
 #a partir de agora, a posicao atualizada do hulk esta guardada em s6 
 #Os registradores a0,a1 e a2 sao os argumentos passados para a funcao print
 
+ 
+
+
+
+
+
 CHAR_CIMA:
 
+
+ 
     	la a0, hulk_parado #carrega as dimensoes do hulk em a0
 	la s6,HULK_POS #posicao atual
 	lw t2,0(s6) #passa a posicao antes do movimento para a antiga
@@ -398,6 +409,7 @@ CHAR_CIMA:
 	blt a2,s9,PARA #limite do mapa
 	jal renderImage #renderiza o sprite na nova posicao
 	sw a2, 4(s6) # atualiza a posicao y do personagem
+	j PRINT_JANELAS
 	j GAME_LOOP #volta para o gameloop
 	ret
 	PARA:
@@ -405,6 +417,11 @@ CHAR_CIMA:
 	j GAME_LOOP
 	
 CHAR_ESQ:
+
+ 
+ 
+ 
+ 
 	la a0, hulk_parado #carrega as dimensoes do hulk em a0
 	la s6,HULK_POS
 	lw a1,0(s6)        #carrega em a1 a posicao x atual do personagem
@@ -412,13 +429,18 @@ CHAR_ESQ:
         blt a1,s4,PARA2     #limite do mapa
 	jal renderImage    #renderiza o sprite na nova posicao
 	sw a1, 0(s6)       # atualiza a posicao x do personagem
+	j PRINT_JANELAS
 	j GAME_LOOP
 	ret
 	PARA2:
 	addi a1,a1,50
 	j GAME_LOOP
+	
 CHAR_BAIXO:
-         
+
+
+ 
+ 
         la a0, hulk_parado #carrega as dimensoes do hulk em a0
         la s6,HULK_POS
        
@@ -428,6 +450,7 @@ CHAR_BAIXO:
 	bgt a2,s5,PARA3   #limite do mapa
 	jal renderImage    #renderiza o sprite na nova posicao
 	sw a2, 4(s6)       # atualiza a posicao y do personagem
+	j PRINT_JANELAS
 	j GAME_LOOP        #volta para o gameloop
 	ret
 	PARA3:
@@ -435,6 +458,8 @@ CHAR_BAIXO:
 	j GAME_LOOP
 CHAR_DIR:
 
+
+ 
 	la a0, hulk_parado #carrega as dimensoes do hulk em a0
 	la s6,HULK_POS
 	
@@ -443,6 +468,7 @@ CHAR_DIR:
         bgt a1,s8,PARA4     #limite do mapa
 	jal renderImage    #renderiza o sprite na nova posicao
 	sw a1, 0(s6)       # atualiza a posicao x do personagem
+	j PRINT_JANELAS
 	j GAME_LOOP
 	ret
 	PARA4:
@@ -450,6 +476,19 @@ CHAR_DIR:
 	j GAME_LOOP
 	
 QUEBRA_JAN:
+       
+      
+	la a0, hulk_ativo #carrega o tamanho da imagem em a0
+	la t0, HULK_POS  #carrega em t0 a word que contem as posicoes xy do hulk
+	lw a1, 0(t0)  #carrega em t0 o numero que esta na primeira word de HULK_POS(esse numero e a posicao x)
+	lw a2, 4(t0)  #carrega em t0 o numero que esta na segunda word(offset da word = 4) de HULK_POS(esse numero e a posicao y)
+	
+	jal renderImage
+       li a7,32
+       li a0,100
+       ecall
+       
+       
 	la s0, contagem
 	lw s2, 0(s0)	# s2 = contagem geral
 
@@ -608,9 +647,7 @@ QUEBRA_JAN:
 	la a0, hulk_ativo #carrega o tamanho da imagem em a0
 	jal renderImage
 	
-	li a7, 32
-	li a0, 3000
-	ecall	# sleep por 3 seg
+	
 	
 	j PRINT_HULK
 	ret
@@ -632,6 +669,3 @@ VER_DERROTA:
 	#jal renderImage 	
 	# j END
 	ret
-	
-	
-
