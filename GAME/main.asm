@@ -47,6 +47,7 @@ NOTAS:	#Tema 1(8 notas por linha = 16)
 .include "../DATA/hulk_pulando_baixo.data"
 .include "../DATA/loki_ativo.data"
 .include "../DATA/loki_parado.data"
+.include "../DATA/loki_fundo.data"
 .include "../DATA/doende.data"
 .include "../DATA/projetil.data"
 .include "../DATA/portal.data"
@@ -62,8 +63,9 @@ NOTAS:	#Tema 1(8 notas por linha = 16)
 HULK_POS:            .word 85,200
 OLD_HULK_POS:    .word 85,200
 
-LOKI_POS:	.word 130,20
-OLD_LOKI_POS:	.word 130,20
+LOKI_POS:	.word 130,18
+OLD_LOKI_POS:	.word 130,18
+LOKI_CONT: 	.word 0
 
 # endereco da janela[0][0]
 janelaX: 	.word 90
@@ -249,13 +251,13 @@ PRINT_JANELAS:
 # Renderiza Loki no Bitmap
 PRINT_LOKI:
         addi s11,s11,1
+       
 	la a0, loki_parado 
 	la t0, LOKI_POS
 	lw a1, 0(t0)
 	lw a2, 4(t0)
 	
 	jal renderImage
-	
 # Renderiza Hulk no Bitmap
 PRINT_HULK:
 	la a0, hulk_parado #carrega o tamanho da imagem em a0
@@ -264,7 +266,6 @@ PRINT_HULK:
 	lw a2, 4(t0)  #carrega em t0 o numero que esta na segunda word(offset da word = 4) de HULK_POS(esse numero e a posicao y)
 	
 	jal renderImage
-        
 ###### GAME LOOP PRINCIPAL ######### 
 GAME_LOOP:  
 
@@ -286,6 +287,9 @@ GAME_LOOP:
 	
 	# 2: verifica colisoes
 	
+	# movimentacao loki
+	j MOV_LOKI
+	LOKI_CHECK:
 	# 3: musica
 	# 4: verifica vitoria ou derrota
 	
@@ -391,12 +395,6 @@ FIM_KEY:	ret				# retorna
 #a partir de agora, a posicao atualizada do hulk esta guardada em s6 
 #Os registradores a0,a1 e a2 sao os argumentos passados para a funcao print
 
- 
-
-
-
-
-
 CHAR_CIMA:
 
 
@@ -411,7 +409,7 @@ CHAR_CIMA:
 	sw a2, 4(s6) # atualiza a posicao y do personagem
 	j PRINT_JANELAS
 	j GAME_LOOP #volta para o gameloop
-	ret
+	#ret
 	PARA:
 	addi a2,a2,60
 	j GAME_LOOP
@@ -431,7 +429,7 @@ CHAR_ESQ:
 	sw a1, 0(s6)       # atualiza a posicao x do personagem
 	j PRINT_JANELAS
 	j GAME_LOOP
-	ret
+	#ret
 	PARA2:
 	addi a1,a1,50
 	j GAME_LOOP
@@ -452,7 +450,7 @@ CHAR_BAIXO:
 	sw a2, 4(s6)       # atualiza a posicao y do personagem
 	j PRINT_JANELAS
 	j GAME_LOOP        #volta para o gameloop
-	ret
+	#ret
 	PARA3:
 	addi a2,a2,-60
 	j GAME_LOOP
@@ -470,7 +468,7 @@ CHAR_DIR:
 	sw a1, 0(s6)       # atualiza a posicao x do personagem
 	j PRINT_JANELAS
 	j GAME_LOOP
-	ret
+	#ret
 	PARA4:
 	addi a1,a1,-50
 	j GAME_LOOP
@@ -641,16 +639,6 @@ QUEBRA_JAN:
 	
 	j PRINT_JANELAS
 	
-	la t0, HULK_POS  #carrega em t0 a word que contem as posicoes xy do hulk
-	lw a1, 0(t0)  #carrega em t0 o numero que esta na primeira word de HULK_POS(esse numero e a posicao x)
-	lw a2, 4(t0)  #carrega em t0 o numero que esta na segunda word(offset da word = 4) de HULK_POS(esse numero e a posicao y)
-	la a0, hulk_ativo #carrega o tamanho da imagem em a0
-	jal renderImage
-	
-	
-	
-	j PRINT_HULK
-	ret
 	
 VER_VITORIA:
 	la s0, contagem
@@ -669,3 +657,53 @@ VER_DERROTA:
 	#jal renderImage 	
 	# j END
 	ret
+
+MOV_LOKI:
+        
+        # contagem
+        la t0, LOKI_CONT
+        lw t1, 0(t0)
+        addi t1, t1, 1	# LOKI_CONT += 1
+        sw t1, 0(t0)	# registra a contagem
+        
+        li t2, 21000000
+	blt t1, t2, DONE_MOV	# se contagem < t2, nao faz nada
+	
+	# apaga o loki antigo
+	la t0, LOKI_POS
+	la a0, loki_fundo
+	lw a1, 0(t0)
+	lw a2, 4(t0)
+	jal renderImage
+	
+	# gera numero aleatorio entre 85 e 185
+	li a7, 42
+	li a1, 100
+	ecall
+	addi a0, a0, 85
+	mv t1, a0
+	# registra a posicao
+	la t0, LOKI_POS
+	sw t1, 0(t0)
+	
+        # renderiza o loki na nova posicao
+	la a0, loki_parado 
+	la t0, LOKI_POS
+	lw a1, 0(t0)
+	lw a2, 4(t0)
+	jal renderImage
+	
+	# zera contagem
+	la t0, LOKI_CONT
+	li s0, 0
+	sw s0, 0(t0)
+	
+	# garante que nao vai bugar
+	la t0, HULK_POS
+	lw a1, 0(t0)
+	lw a2, 4(t0)
+
+	DONE_MOV:	j LOKI_CHECK
+	
+	
+	
