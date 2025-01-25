@@ -485,7 +485,7 @@ QUEBRA_JAN:
 	
 	jal renderImage
        li a7,32
-       li a0,100
+       li a0,200
        ecall
        
        
