@@ -34,7 +34,8 @@ NOTAS:	#Refrão(14 notas por linha = 28)
 .include "../DATA/loki_ativo.data"
 .include "../DATA/loki_parado.data"
 .include "../DATA/loki_fundo.data"
-.include "../DATA/doende.data"
+#.include "../DATA/doende.data"
+.include "../DATA/chitauri.data"
 .include "../DATA/projetil.data"
 .include "../DATA/portal.data"
 .include "../DATA/janela.data"
@@ -53,6 +54,8 @@ LOKI_POS:	.word 130,18
 OLD_LOKI_POS:	.word 130,18
 LOKI_CONT: 	.word 0
 
+CHITAURI_POS:	.word 280,140
+CHITAURI_ATIVO: .word 0	# 0 - padrao; 1 - ativo
 # endereco da janela[0][0]
 janelaX: 	.word 90
 janelaY:	.word 70
@@ -99,7 +102,7 @@ LOOP_NOTAS:    bge t0,s1, DONE_MUSIC        # contador chegou no final? então  v
     addi s0,s0,8        # incrementa para o endereço da próxima nota
     
     addi t0,t0,1        # incrementa o contador de notas	
-    j LOOP_NOTAS
+   # j LOOP_NOTAS
 	
 DONE_MUSIC:
         # Codigo abaixo obtem a entrada
@@ -296,9 +299,12 @@ GAME_LOOP:
 	jal KEY
 	# 2: verifica colisoes
 	
-	# 3: movimentacao loki
+	# 3: movimentacao inimigos
 	j MOV_LOKI
 	LOKI_CHECK:
+	
+	jal CHITAURI
+	CHIT_END:
 	# 4: verifica vitoria ou derrota
 	jal VER_VITORIA
 	jal VER_DERROTA
@@ -723,3 +729,41 @@ MOV_LOKI:
 
 	DONE_MOV:	j LOKI_CHECK
 
+CHITAURI:
+	la t0, contagem
+	lw t1, 0(t0)	# t1 = contagem de janelas quebradas
+	li t2, 4
+	blt t1, t2, CHIT_END	# se contagem < 4, faz nada
+	
+	la t0, CHITAURI_ATIVO
+	lw t1, 0(t0)
+	li t2, 1
+	beq t1, t2, MOV_CHITAURI	# se o estado for ativo, pula
+		# muda o estado para ativo
+		li t2, 1
+		la t0, CHITAURI_ATIVO
+		sw t2, 0(t0) # CHITAURI_ATIVO = 1
+		
+		# gera n aleatorio de 80 a 200 em a0
+		li a7, 42
+		li a1, 120	# limite
+		ecall
+		addi a0, a0, 80
+		mv t1, a0
+		
+		# atualiza a coordenada y do chitauri
+		la t0, CHITAURI_POS
+		sw t1, 4(t0)	# coordenada y do chitauri = t1
+		
+		# renderiza o chitauri
+		la t0, CHITAURI_POS
+		lw a1, 0(t0)
+		lw a2, 4(t0)
+		la a0, chitauri
+		jal renderImage
+		
+		
+		j CHIT_END
+	
+MOV_CHITAURI:
+	j CHIT_END
