@@ -12,27 +12,13 @@
 #			 						#
 #########################################################################
 .data
-# inclusao dos audios
-# Numero de Notas a tocar
-NUM: .word 112
-# lista de nota,dura??o,nota,dura??o,nota,dura??o,...
+# inclusao da soundtrack
 
-NOTAS:	#Tema 1(8 notas por linha = 16)
-	43,2500,44,1200,45,1200,46,1200,45,1200,44,1200,39,600,41,600,
-	43,2500,44,1200,45,1200,46,1200,45,1200,44,1200,39,600,41,600,
-	#Tema 2(11 notas por linha = 44)
-	60,2200,67,550,65,500,63,600,65,500,67,700,60,1700,67,550,65,500,63,700,62,700,
-	60,2200,67,550,65,500,63,600,65,500,67,700,60,1700,67,550,65,500,63,700,62,700,
-	72,2200,79,550,77,500,75,600,77,500,79,700,72,1700,79,550,77,500,75,700,74,700,
-	72,2200,79,550,77,500,75,600,77,500,79,700,72,1700,79,550,77,500,75,700,74,700,
-	#Ponte (8 notas por linha = 24)
-	63,300,60,300,60,300,63,300,63,300,60,300,60,300,63,300,
-	63,300,60,300,60,300,63,300,63,300,60,300,60,300,63,300,
-	46,300,48,800,48,300,50,800,58,300,60,800,60,300,62,800,
-	#Refr?o(14 notas por linha = 28)
+
+# lista de nota, duracao, nota2, duracao2, ..
+NOTAS:	#Refrão(14 notas por linha = 28)
 	60,2500,60,500,60,750,67,250,65,2010,63,1000,62,1000,60,2500,60,500,60,750,67,250,69,1000,65,1000,67,2010,
 	72,2500,72,500,72,750,79,250,77,2010,75,1000,74,1000,72,2500,72,500,72,750,79,250,81,1000,77,1000,79,4000,
-#.include "/midi.s"
 
 
 #inclusao das imagens
@@ -91,6 +77,31 @@ addi t1,t1,4        # soma 4 ao endere?o
 addi t4,t4,4
 j LOOP5
 mainMenuSelect:
+MUSIC:
+    
+    li s1,14        # le o numero de notas em s1
+    la s0,NOTAS        # define o endereço das notas
+    li a2,48        # define o instrumento Possíveis: 0,48
+    li a3,127        # define o volume
+    li t0, 0
+
+LOOP_NOTAS:    bge t0,s1, DONE_MUSIC        # contador chegou no final? então  vá para FIM
+    lw a0,0(s0)        # le o valor da nota
+    lw a1,4(s0)        # le a duracao da nota
+    
+    li a7,31        # define a chamada de syscall
+    ecall            # toca a nota
+    
+    mv a0,a1        # passa a duração da nota para a pausa
+    li a7,32        # define a chamada de syscal 
+    ecall            # realiza uma pausa de a0 ms
+    
+    addi s0,s0,8        # incrementa para o endereço da próxima nota
+    
+    addi t0,t0,1        # incrementa o contador de notas	
+    j LOOP_NOTAS
+	
+DONE_MUSIC:
         # Codigo abaixo obtem a entrada
         li    t0, 0xFF200000 # carrega em t0 o endere?o do status do teclado.
         lb     t1, 0(t0) # carrega o status do teclado em t1.
@@ -282,16 +293,16 @@ GAME_LOOP:
        li s8, 185
        li s9, 80
 	# 1: acoes do player
-	
 	jal KEY
-	
 	# 2: verifica colisoes
 	
-	# movimentacao loki
+	# 3: movimentacao loki
 	j MOV_LOKI
 	LOKI_CHECK:
-	# 3: musica
 	# 4: verifica vitoria ou derrota
+	jal VER_VITORIA
+	jal VER_DERROTA
+	
 	
 	j GAME_LOOP
 ###### ################### #########	
@@ -483,9 +494,16 @@ QUEBRA_JAN:
 	
 	jal renderImage
        li a7,32
-       li a0,200
+       li a0,100
        ecall
        
+       # efeito sonoro
+	    li a0, 40    # define a nota
+	    li a1,800        # define a duração da nota em ms
+	    li a2,127        # define o instrumento
+	    li a3,127        # define o volume
+	    li a7,33        # define o syscall
+	    ecall            # toca a nota
        
 	la s0, contagem
 	lw s2, 0(s0)	# s2 = contagem geral
@@ -704,6 +722,4 @@ MOV_LOKI:
 	lw a2, 4(t0)
 
 	DONE_MOV:	j LOKI_CHECK
-	
-	
-	
+
