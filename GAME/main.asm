@@ -141,6 +141,7 @@ LOOP1: 	beq t1,t2,DONE		# Se for o ultimo endereco ent?o sai do loop
 
 DONE:
 la t0,fase					# verifica a fase
+lw t0,0(t0)
 beqz t0,PRINT_JANELAS		# se a fase for 0 (1), printa as janelas nos status da fase 1
 la t1,JANELAS_QUEBRADAS
 sw zero,0(t1)				# zera todas as janelas para a fase 2
@@ -259,7 +260,8 @@ PRINT_JANELAS:
 	jal renderImage
 	
 	# porta / janela 9
-	la t3, fase					
+	la t3, fase	
+	lw t3, 0(t3)				
 	bnez t3,FASE2_JANELA9
 	la t0, JANELAS_QUEBRADAS		
 	lw t1, 32(t0)				#Carega o status da janela 9 em t1
@@ -287,7 +289,7 @@ PRINT_JANELAS:
 	lw a1, janelaX
 	addi a1, a1, 50
 	lw a2, janelaY
-	addi a2, a2, 115
+	addi a2, a2, 120
 	FIM_JANELA9:
 
 	jal renderImage
