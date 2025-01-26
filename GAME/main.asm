@@ -16,7 +16,7 @@
 
 
 # lista de nota, duracao, nota2, duracao2, ..
-NOTAS:	#Refrão(14 notas por linha = 28)
+NOTAS:	#Refrï¿½o(14 notas por linha = 28)
 	60,2500,60,500,60,750,67,250,65,2010,63,1000,62,1000,60,2500,60,500,60,750,67,250,69,1000,65,1000,67,2010,
 	72,2500,72,500,72,750,79,250,77,2010,75,1000,74,1000,72,2500,72,500,72,750,79,250,81,1000,77,1000,79,4000,
 
@@ -83,26 +83,26 @@ mainMenuSelect:
 MUSIC:
     
     li s1,14        # le o numero de notas em s1
-    la s0,NOTAS        # define o endereço das notas
-    li a2,48        # define o instrumento Possíveis: 0,48
+    la s0,NOTAS        # define o endereï¿½o das notas
+    li a2,48        # define o instrumento Possï¿½veis: 0,48
     li a3,127        # define o volume
     li t0, 0
 
-LOOP_NOTAS:    bge t0,s1, DONE_MUSIC        # contador chegou no final? então  vá para FIM
+LOOP_NOTAS:    bge t0,s1, DONE_MUSIC        # contador chegou no final? entï¿½o  vï¿½ para FIM
     lw a0,0(s0)        # le o valor da nota
     lw a1,4(s0)        # le a duracao da nota
     
     li a7,31        # define a chamada de syscall
     ecall            # toca a nota
     
-    mv a0,a1        # passa a duração da nota para a pausa
+    mv a0,a1        # passa a duraï¿½ï¿½o da nota para a pausa
     li a7,32        # define a chamada de syscal 
     ecall            # realiza uma pausa de a0 ms
     
-    addi s0,s0,8        # incrementa para o endereço da próxima nota
+    addi s0,s0,8        # incrementa para o endereï¿½o da prï¿½xima nota
     
     addi t0,t0,1        # incrementa o contador de notas	
-   # j LOOP_NOTAS
+    j LOOP_NOTAS
 	
 DONE_MUSIC:
         # Codigo abaixo obtem a entrada
@@ -505,7 +505,7 @@ QUEBRA_JAN:
        
        # efeito sonoro
 	    li a0, 40    # define a nota
-	    li a1,800        # define a duração da nota em ms
+	    li a1,800        # define a duraï¿½ï¿½o da nota em ms
 	    li a2,127        # define o instrumento
 	    li a3,127        # define o volume
 	    li a7,33        # define o syscall
