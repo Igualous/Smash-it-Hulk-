@@ -69,6 +69,7 @@ fase: .word 0
 .text
 #### START
 # Carrega tela de menu
+la a4,fase			# define a4 como numero da fase
 li t1,0xFF000000    # endereco inicial da Memoria VGA - Frame 0
 li t2,0xFF012C00    # endereco final 
 la t4, tela          # endere?o dos dados da tela na memoria
@@ -82,15 +83,21 @@ j LOOP5
 mainMenuSelect:
 MUSIC:
     
-    li s1,14        # le o numero de notas em s1
+    li s1,28        # le o numero de notas em s1
     la s0,NOTAS        # define o endere�o das notas
-    li a2,48        # define o instrumento Poss�veis: 0,48
+    li a2,48        # define o instrumento
     li a3,127        # define o volume
     li t0, 0
 
-LOOP_NOTAS:    bge t0,s1, DONE_MUSIC        # contador chegou no final? ent�o  v� para FIM
+LOOP_NOTAS:    
+	bge t0,s1, DONE_MUSIC        # contador chegou no final? ent�o  v� para FIM
     lw a0,0(s0)        # le o valor da nota
     lw a1,4(s0)        # le a duracao da nota
+
+	li t3, 0xFF200000    # carrega em t3 o endereco do status do teclado.
+    lb t1, 0(t3)         #carrega o status do teclado em t1
+    andi t1, t1, 1       #verificar apenas o bit 0 (tecla pressionada)
+    bne t1, zero, VERIFICAR_TECLA #se uma tecla foi pressionada, verifica qual foi
     
     li a7,31        # define a chamada de syscall
     ecall            # toca a nota
@@ -101,37 +108,49 @@ LOOP_NOTAS:    bge t0,s1, DONE_MUSIC        # contador chegou no final? ent�o 
     
     addi s0,s0,8        # incrementa para o endere�o da pr�xima nota
     
-    addi t0,t0,1        # incrementa o contador de notas	
-    j LOOP_NOTAS
-	
+    addi t0,t0,1        # incrementa o contador de notas
+	j LOOP_NOTAS
+
+VERIFICAR_TECLA:
+    lb t1, 4(t3)        		 # carrega o status do teclado em t1
+
+    li t2, 0x031         		#valor do 1 na tabela ASCII
+    beq t1, t2, CARREGA_FUNDO #se 1 foi pressionado, interrompe a musica e carrega a fase
+
+    j LOOP_NOTAS          #se nao, continua tocando as notas
+
 DONE_MUSIC:
         # Codigo abaixo obtem a entrada
-        li    t0, 0xFF200000 # carrega em t0 o endere?o do status do teclado.
-        lb     t1, 0(t0) # carrega o status do teclado em t1.
+        li    t3, 0xFF200000 # carrega em t3 o endere?o do status do teclado.
+        lb     t1, 0(t3) # carrega o status do teclado em t1.
 
         andi    t1, t1, 1 # isso eh um processo de mascaramento. Apenas queremos saber sobre o primeiro bit de t1, que indica se alguma tecla foi pressionada.
 
         beq    t1, zero, mainMenuSelect #se a tecla 1 n?o foi pressionada, volta a verificar at? que a mesma seja acionada
 
-        lb    t1, 4(t0) #ao ser pressionado, carrega 1 em t1 para fins de compara??o
+        lb    t1, 4(t3) #ao ser pressionado, carrega 1 em t1 para fins de compara??o
 
         li    t2, 0x031 #valor do 1 na tabela ASCII
-        beq    t1, t2, CARREGA_FUNDO1 #se o que tiver sido registrado no teclado foi 1, carrega a fase
+        beq    t1, t2, CARREGA_FUNDO #se o que tiver sido registrado no teclado foi 1, carrega a fase
 
         li    t2, 0x032 #valor do 2 na tabela ASCII
         bne    t1, t2, continueMMSelect #Se o numero digitado n?o foi 2 nem 1, volta a esperar um input valido 
         j    END #se o input tiver sido 2, encerra o programa 
     continueMMSelect:
-        j    mainMenuSelect
+        j    LOOP_NOTAS
         
         
 # Carrega a fase 1 em ambos os frames
 
-CARREGA_FUNDO1:               # carrega a imagem no frame 0
+CARREGA_FUNDO:               # carrega a imagem no frame 0
 	li t1,0xFF000000	# endereco inicial da Memoria VGA - Frame 0
 	li t2,0xFF012C00	# endereco final 
-	la t4,fundo1		# endere?o dos dados da tela na memoria
-	addi t4,t4,8		# primeiro pixels depois das informa??es de nlin ncol
+	lw t0,0(a4)			
+	beqz t0,FUNDO1		# verifica a fase
+	la t4,fundo2
+	j CONTINUAR_FUNDO
+	FUNDO1: la t4,fundo1		# endere?o dos dados da tela na memoria
+	CONTINUAR_FUNDO: addi t4,t4,8		# primeiro pixels depois das informa??es de nlin ncol
 LOOP1: 	beq t1,t2,DONE		# Se for o ultimo endereco ent?o sai do loop
 	lw t3,0(t4)		# le um conjunto de 4 pixels : word
 	sw t3,0(t1)		# escreve a word na mem?ria VGA
@@ -140,14 +159,26 @@ LOOP1: 	beq t1,t2,DONE		# Se for o ultimo endereco ent?o sai do loop
 	j LOOP1			# volta a verificar
 
 DONE:
+	lw t0,0(a0)
+	beqz t0,PRINT_JANELAS		# se a fase for 0 (1), printa as janelas nos status da fase 1
+	la t1,JANELAS_QUEBRADAS
+	sw zero,0(t1)				# zera todas as janelas para a fase 2
+	sw zero,4(t1)
+	sw zero,8(t1)
+	sw zero,12(t1)
+	sw zero,16(t1)
+	sw zero,20(t1)
+	sw zero,24(t1)
+	sw zero,28(t1)
+	sw zero,32(t1)
+
+
 	
 # Renderiza as janelas
 PRINT_JANELAS:
-        
-      
-	la t0, JANELAS_QUEBRADAS
-	
+
 	# janela 1
+	la t0, JANELAS_QUEBRADAS
 	lw t1, 0(t0)
 	bnez t1, QUEBRADA1
 	la a0, janela
@@ -246,10 +277,12 @@ PRINT_JANELAS:
 	addi a1, a1, 100
 	jal renderImage
 	
-	# porta
-	la t0, JANELAS_QUEBRADAS
-	lw t1, 32(t0)
-	bnez t1, QUEBRADA9
+	# porta / janela 9
+	lw t3, 0(a4)				
+	bnez t3,FASE2_JANELA9		
+	la t0, JANELAS_QUEBRADAS		
+	lw t1, 32(t0)				
+	bnez t1, QUEBRADA9			
 	la a0, porta
 	j DONE_JAN9
 	QUEBRADA9:
@@ -259,7 +292,23 @@ PRINT_JANELAS:
 	addi a1, a1, 50
 	lw a2, janelaY
 	addi a2, a2, 115
-	
+	j FIM_JANELA9
+
+	FASE2_JANELA9:
+	la t0, JANELAS_QUEBRADAS		
+	lw t1, 32(t0)				
+	bnez t1, QUEBRADA9_FASE2			
+	la a0, janela
+	j DONE_JAN9_FASE2
+	QUEBRADA9_FASE2:
+	la a0, janela_quebrada
+	DONE_JAN9_FASE2:
+	lw a1, janelaX
+	addi a1, a1, 50
+	lw a2, janelaY
+	addi a2, a2, 120
+	FIM_JANELA9:
+
 	jal renderImage
 	
 # Renderiza Loki no Bitmap
@@ -283,12 +332,12 @@ PRINT_HULK:
 ###### GAME LOOP PRINCIPAL ######### 
 GAME_LOOP:  
 
-#IMPORTANTE!!!!!!!
-       #Ainda nao implementado[
-       #A alteracao dos valores contidos nos registradores s4 e s5 deve ser evitada.
-       #Esses dois registradores agirao como argumentos de comparacao para saber se 
-       #o hulk esta ou nao em alguma das bordas dos mapas. Vamos tentar achar uma solucao pra isso
-#]
+	#IMPORTANTE!!!!!!!
+		#Ainda nao implementado[
+		#A alteracao dos valores contidos nos registradores s4 e s5 deve ser evitada.
+		#Esses dois registradores agirao como argumentos de comparacao para saber se 
+		#o hulk esta ou nao em alguma das bordas dos mapas. Vamos tentar achar uma solucao pra isso
+	#]
 
             
        li s4, 85 #posicao X da borda esquerda, ou seja, se ele estiver na coluna 85, movimentos para a esquerda sao bloqueados
@@ -308,7 +357,6 @@ GAME_LOOP:
 	# 4: verifica vitoria ou derrota
 	jal VER_VITORIA
 	jal VER_DERROTA
-	
 	
 	j GAME_LOOP
 ###### ################### #########	
@@ -508,7 +556,7 @@ QUEBRA_JAN:
 	    li a1,800        # define a dura��o da nota em ms
 	    li a2,127        # define o instrumento
 	    li a3,127        # define o volume
-	    li a7,33        # define o syscall
+	    li a7,31        # define o syscall
 	    ecall            # toca a nota
        
 	la s0, contagem
@@ -670,7 +718,9 @@ VER_VITORIA:
 	
 	li t0, 9
 	bne s2, t0, NAO_VENCEU # se contagem < 9, nao venceu
-	# j CARREGA_FASE2
+	lw t1,0(a4)
+	bnez t1, NAO_VENCEU
+	j CARREGA_FASE2
 	
 	NAO_VENCEU:
 	ret
@@ -767,3 +817,13 @@ CHITAURI:
 	
 MOV_CHITAURI:
 	j CHIT_END
+
+CARREGA_FASE2:
+	li t0,1
+	sw t0,0(a4)			# alterando numero da fase para 1(fase 2)
+	la s6,HULK_POS		# carrega posicao do hulk
+	li t1,85
+	sw t1,0(s6)			# redefine o x do hulk
+	li t2,200
+	sw t2,4(s6)			# redefine o y do hulk
+	j CARREGA_FUNDO
