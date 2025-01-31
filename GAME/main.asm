@@ -34,7 +34,6 @@ NOTAS:	#Refr�o(14 notas por linha = 28)
 .include "../DATA/loki_ativo.data"
 .include "../DATA/loki_parado.data"
 .include "../DATA/loki_fundo.data"
-#.include "../DATA/doende.data"
 .include "../DATA/chitauri.data"
 .include "../DATA/projetil.data"
 .include "../DATA/portal.data"
@@ -53,6 +52,10 @@ OLD_HULK_POS:    .word 85,200
 LOKI_POS:	.word 130,18
 OLD_LOKI_POS:	.word 130,18
 LOKI_CONT: 	.word 0
+
+PROJETIL_POS: .word 120, 23
+PROJETIL_CONT: .word 0
+projetil_ativo_cont: .word 0
 
 CHITAURI_POS:	.word 280,140
 CHITAURI_ATIVO: .word 0	# 0 - padrao; 1 - ativo
@@ -351,6 +354,8 @@ GAME_LOOP:
 	# 3: movimentacao inimigos
 	j MOV_LOKI
 	LOKI_CHECK:
+	
+	
 	
 	jal CHITAURI
 	CHIT_END:
@@ -815,9 +820,56 @@ CHITAURI:
 		
 		j CHIT_END
 	
-MOV_CHITAURI:
+MOV_CHITAURI:	# A FAZER
 	j CHIT_END
-
+	
+	
+PROJETIL:
+	la t0, PROJETIL_CONT
+	lw t1, 0(t0)	# t1 = contagem atual
+	
+	li t0, 30000000
+	blt, t1, t0, FIM_PROJ	# se contagem < t0, faz nada
+	
+	# zera a contagem
+	la t0, PROJETIL_CONT
+	sw zero, 0(t0)
+	
+	# define a posicao x do projetil
+	la t1, LOKI_POS
+	lw t2, 0(t1) 	# t2 = coordenada 'x' atual do loki
+	lw t3, 4(t1)	# t3 = coordenada 'y' do loki
+	
+	la t0, PROJETIL_POS
+	sw t2, 0(t0)	# registra a coordenada 'y' fixa
+	
+	# incrementa 1 a coordenada y
+	la t0, PROJETIL_POS
+	lw t1, 4(t0)
+	addi t1, t1, 2	# desce a posicao y do sprite de 2 em 2 pixels
+	sw t1, 4(t0)
+	li s0, 200
+	bgt t1, s0, FIM_PROJ
+	
+	# renderiza o fundo
+	jal renderFundo
+	
+	# renderiza o projetil
+	la t0, PROJETIL_POS
+	lw a1, 0(t0)
+	lw a2, 4(t0)
+	la a0, projetil
+	jal renderImage
+	
+	
+	
+	
+	
+	FIM_PROJ:
+	addi t1, t1, 1	# incrementa 1 na contagem
+	sw t1, 0(t0)	# registra a contagem
+	ret
+	
 CARREGA_FASE2:
 	li t0,1
 	sw t0,0(a4)			# alterando numero da fase para 1(fase 2)
@@ -827,3 +879,24 @@ CARREGA_FASE2:
 	li t2,200
 	sw t2,4(s6)			# redefine o y do hulk
 	j CARREGA_FUNDO
+
+renderFundo: # carrega todos os elementos de novo
+	la a0, fundo1
+	li a1, 0
+	li a2, 0
+	jal renderImage
+	
+	j PRINT_JANELAS
+	
+	la t0, HULK_POS
+	lw a1, 0(t0)
+	lw a2, 4(t0)
+	jal renderImage
+	
+	la t0, LOKI_POS
+	lw a1, 0(t0)
+	lw a2, 0(t0)
+	jal renderImage
+	
+	ret
+	
