@@ -34,6 +34,7 @@ NOTAS:	#Refr�o(14 notas por linha = 28)
 .include "../DATA/loki_ativo.data"
 .include "../DATA/loki_parado.data"
 .include "../DATA/loki_fundo.data"
+#.include "../DATA/doende.data"
 .include "../DATA/chitauri.data"
 .include "../DATA/projetil.data"
 .include "../DATA/portal.data"
@@ -45,7 +46,7 @@ NOTAS:	#Refr�o(14 notas por linha = 28)
 
 #############  SETUP INICIAL
 # posicoes iniciais
-
+PASSOI: .word 0
 HULK_POS:            .word 85,200
 OLD_HULK_POS:    .word 85,200
 
@@ -53,12 +54,11 @@ LOKI_POS:	.word 130,18
 OLD_LOKI_POS:	.word 130,18
 LOKI_CONT: 	.word 0
 
-PROJETIL_POS: .word 120, 23
-PROJETIL_CONT: .word 0
-projetil_ativo_cont: .word 0
-
 CHITAURI_POS:	.word 280,140
+CHITAURI_POS_ANTIGA: .word 280,140
 CHITAURI_ATIVO: .word 0	# 0 - padrao; 1 - ativo
+CHITAURI_MOVE: .word 0 # verificador que fara com que o chitauri continue se movendo
+CHIT_CONT: .word 0
 # endereco da janela[0][0]
 janelaX: 	.word 90
 janelaY:	.word 70
@@ -316,7 +316,7 @@ PRINT_JANELAS:
 	
 # Renderiza Loki no Bitmap
 PRINT_LOKI:
-        addi s11,s11,1
+        
        
 	la a0, loki_parado 
 	la t0, LOKI_POS
@@ -332,6 +332,11 @@ PRINT_HULK:
 	lw a2, 4(t0)  #carrega em t0 o numero que esta na segunda word(offset da word = 4) de HULK_POS(esse numero e a posicao y)
 	
 	jal renderImage
+	
+	
+	
+        
+        
 ###### GAME LOOP PRINCIPAL ######### 
 GAME_LOOP:  
 
@@ -341,8 +346,17 @@ GAME_LOOP:
 		#Esses dois registradores agirao como argumentos de comparacao para saber se 
 		#o hulk esta ou nao em alguma das bordas dos mapas. Vamos tentar achar uma solucao pra isso
 	#]
-
             
+            
+	    # contagem para a movimentacao do chitauri
+        la t0, CHIT_CONT
+        lw t1, 0(t0)
+        addi t1, t1, 1	#  CHIT_CONT += 1
+        sw t1, 0(t0)	# registra a contagem
+	
+	    
+	
+	
        li s4, 85 #posicao X da borda esquerda, ou seja, se ele estiver na coluna 85, movimentos para a esquerda sao bloqueados
        li s5, 200 #posicao y da borda inferior, ou seja, se ele estiver na linha 200, movimentos para baixo sao bloqueados
        li s8, 185
@@ -352,13 +366,46 @@ GAME_LOOP:
 	# 2: verifica colisoes
 	
 	# 3: movimentacao inimigos
+	
+	li t1,2 #comparacao para ver se o chitauri deve sumir
+	la t0,CHITAURI_MOVE # move o verificador para t0
+	lw t6,0(t0)  #coloca em t6 o verificador
+	beq t1,t6,CHIT_END #se ele ja percorreu toda a tela, finaliza as operacoes do chitauri por definitivo
+	
+	
+	li t1,1 #comparacao para ver se o chitauri ja foi printado na posicao inicial
+	la t0,CHITAURI_MOVE #move para t0 o verificador de movimentacao do Chitauri
+	lw t6,0(t0) #coloca em t6 o verificador
+	beq t1,t6,MOV_CHITAURI #se ele ja tiver aparecido na posicao inicial, comeca a movimentacao
+	
+	
+	jal CHITAURI #printara pela primeira vez o chitauri
+	
+	
+	
+	CHITAURI_PRINT:
+
+	la a5, chitauri #carrega o tamanho da imagem em a5
+	la t0, CHITAURI_POS  #carrega em t0 a word que contem as posicoes xy do chitauri
+	lw a1, 0(t0)  #carrega em t0 o numero que esta na primeira word de CHITAURI_POS(esse numero e a posicao x)
+	lw a2, 4(t0)  #carrega em t0 o numero que esta na segunda word(offset da word = 4) de CHITAURI_POS(esse numero e a posicao y)
+	
+	jal renderCHITAURI #apos colocar todos os argumentos necessarios
+        li a7,32 #ecall de pausa
+        li a0,1 #1 milesimo por pixel
+        ecall
+        
+        
+        
+        j CARREGA_FUNDO #recarrega o fundo e as janelas(provavelmente isso que ta bugando)
+     
+     
+	CHIT_END: #volta para as outras verificacoes do game loop
+	
+	
+	
 	j MOV_LOKI
 	LOKI_CHECK:
-	
-	
-	
-	jal CHITAURI
-	CHIT_END:
 	# 4: verifica vitoria ou derrota
 	jal VER_VITORIA
 	jal VER_DERROTA
@@ -433,6 +480,70 @@ renderImage:
 	
 	ret
 	
+	##essa funcao deve renderizar o chitauri separadamente para que ele e o hulk nao buguem na mesma posicao
+	
+	renderCHITAURI:
+	# Argumentos da fun??o:
+	# a5 cont?m o endere?o inicial da imagem
+	# a6 cont?m a posi??o X da imagem
+	# a3 cont?m a posi??o Y da imagem
+	
+	
+	lw		s0, 0(a5) # Guarda em s0 a largura da imagem
+	lw		s1, 4(a5) # Guarda em s1 a altura da imagem
+	
+	mv		s2, a5 # Copia o endere?o da imagem para s2
+	addi	s2, s2, 8 # Pula 2 words - s2 agora aponta para o primeiro pixel da imagem
+	
+	li		s3, 0xff000000 # carrega em s3 o endere?o do bitmap display frame 0
+	
+	li		t1, 320 # t1 ? o tamanho de uma linha no bitmap display
+	mul		t1, t1, a2 # multiplica t1 pela posi??o Y desejada no bitmap display.
+	# Multiplicamos 320 pela posi??o desejada para obter um offset em rela??o ao endere?o inicial do bimap display correspondente ? linha na qual queremos desenhar a imagem. Basta agora obter mais um offset para chegar at? a coluna que queremos. Isso ? mais simples, basta adicionar a posi??o X.
+	add		t1, t1, a1
+	# t1 agora tem o offset completo, basta adicion?-lo ao endere?o do bitmap.
+	add		s3, s3, t1
+	# O endere?o em s3 agora representa exatamente a posi??o em que o primeiro pixel da nossa imagem deve ser renderizado.
+
+	blt		a1, zero, endRenderz # se X < 0, n?o renderizar
+	blt		a2, zero, endRenderz # se Y < 0, n?o renderizar
+	
+	li		t1, 320
+	add		t0, s0, a1
+	bgt		t0, t1, endRenderz # se X + larg > 320, n?o renderizar
+	
+	li		t1, 240
+	add		t0, s1, a2
+	bgt		t0, t1, endRenderz # se Y + alt > 240, n?o renderizar
+	
+	li		t1, 0 # t1 = Y (linha) atual
+	lineLoopz:
+		bge		t1, s1, endRenderz # Se terminamos a ?ltima linha da imagem, encerrar
+		li		t0, 0 # t0 = X (coluna) atual
+		
+		columnLoopz:
+			bge		t0, s0, columnEndz # Se terminamos a linha atual, ir pra pr?xima
+			
+			lb		t2, 0(s2) # Pega o pixel da imagem
+			sb		t2, 0(s3) # P?e o pixel no display
+			
+			# Incrementa os endere?os e o contador de coluna
+			addi	s2, s2, 1
+			addi	s3, s3, 1
+			addi	t0, t0, 1
+			j		columnLoopz
+			
+		columnEndz:
+		
+		addi	s3, s3, 320 # pr?xima linha no bitmap display
+		sub		s3, s3, s0 # reposiciona o endere?o de coluna no bitmap display (subtraindo a largura da imagem). Note que essa subtra??o ? necess?ria - verifique os efeitos da aus?ncia dela voc? mesmo, montando esse c?digo.
+		
+		addi	t1, t1, 1 # incrementar o contador de altura
+		j		lineLoopz
+		
+	endRenderz:
+	
+	ret	
 ### Apenas verifica se h? tecla pressionada (ideal para jogo dinamico)
 KEY:	li t1,0xFF200000		# carrega o endere?o de controle do KDMMIO
 	lw t0,0(t1)			# Le bit de Controle Teclado
@@ -553,7 +664,7 @@ QUEBRA_JAN:
 	
 	jal renderImage
        li a7,32
-       li a0,100
+       li a0,1000
        ecall
        
        # efeito sonoro
@@ -740,42 +851,42 @@ VER_DERROTA:
 MOV_LOKI:
         
         # contagem
-        la t0, LOKI_CONT
-        lw t1, 0(t0)
+        la t0, LOKI_CONT #carrega em t0 o endereco da contagem atual do loki
+        lw t1, 0(t0) #carrega em t1 a contagem atual do loki
         addi t1, t1, 1	# LOKI_CONT += 1
         sw t1, 0(t0)	# registra a contagem
         
-        li t2, 21000000
+        li t2, 21000000  #garante que o loki nao se mova incessantemente
 	blt t1, t2, DONE_MOV	# se contagem < t2, nao faz nada
 	
 	# apaga o loki antigo
-	la t0, LOKI_POS
-	la a0, loki_fundo
-	lw a1, 0(t0)
-	lw a2, 4(t0)
-	jal renderImage
+	la t0, LOKI_POS #carrega em t0 as coordenadas do loki
+	la a0, loki_fundo #argumento para print que indica com qual cor o sprite deve ser apagado
+	lw a1, 0(t0) #argumento para print com a posicao X do Loki
+	lw a2, 4(t0) #argumento para print com a posicao Y do Loki
+	jal renderImage  #renderiza a imagem
 	
 	# gera numero aleatorio entre 85 e 185
-	li a7, 42
-	li a1, 100
+	li a7, 42  #ecall para gerar numero aleatorio
+	li a1, 100 #garante que nao saia dos limites do mapa
 	ecall
-	addi a0, a0, 85
-	mv t1, a0
+	addi a0, a0, 85 #move 85 colunas
+	mv t1, a0 #coloca em t1 a nova posicao Y
 	# registra a posicao
-	la t0, LOKI_POS
-	sw t1, 0(t0)
+	la t0, LOKI_POS #carrega em t0 a posicao desatualizada
+	sw t1, 0(t0)  #atualiza a posicao
 	
         # renderiza o loki na nova posicao
-	la a0, loki_parado 
-	la t0, LOKI_POS
-	lw a1, 0(t0)
-	lw a2, 4(t0)
-	jal renderImage
+	la a0, loki_parado #argumento para print do sprite a ser renderizado
+	la t0, LOKI_POS # carrega em t0 as posicoes X e Y do Loki
+	lw a1, 0(t0) #argumento para print da posicao X do Loki
+	lw a2, 4(t0) # argumento Y para print da posicao Y do Loki
+	jal renderImage #renderiza a imagem
 	
 	# zera contagem
-	la t0, LOKI_CONT
-	li s0, 0
-	sw s0, 0(t0)
+	la t0, LOKI_CONT # carrega em t0 a contagem
+	li s0, 0  # valor que sera armazenado na contagem
+	sw s0, 0(t0) #torna a contagem 0
 	
 	# garante que nao vai bugar
 	la t0, HULK_POS
@@ -785,90 +896,63 @@ MOV_LOKI:
 	DONE_MOV:	j LOKI_CHECK
 
 CHITAURI:
-	la t0, contagem
+	la t0, contagem  #carrega em t0 a quantidade de janelas quebradas
 	lw t1, 0(t0)	# t1 = contagem de janelas quebradas
-	li t2, 4
+	li t2, 4  #sera usado para verificar quantas janelas foram quebradas
 	blt t1, t2, CHIT_END	# se contagem < 4, faz nada
 	
-	la t0, CHITAURI_ATIVO
-	lw t1, 0(t0)
-	li t2, 1
-	beq t1, t2, MOV_CHITAURI	# se o estado for ativo, pula
-		# muda o estado para ativo
-		li t2, 1
-		la t0, CHITAURI_ATIVO
-		sw t2, 0(t0) # CHITAURI_ATIVO = 1
-		
-		# gera n aleatorio de 80 a 200 em a0
-		li a7, 42
-		li a1, 120	# limite
-		ecall
-		addi a0, a0, 80
-		mv t1, a0
+	# gera n aleatorio de 80 a 200 em a0
+		#li a7, 42
+		#li a1, 120	# limite
+		#ecall
+		#addi a0, a0, 80
+		#mv t1, a0
 		
 		# atualiza a coordenada y do chitauri
-		la t0, CHITAURI_POS
-		sw t1, 4(t0)	# coordenada y do chitauri = t1
+		#la t0, CHITAURI_POS
+		#sw t1, 4(t0)	# coordenada y do chitauri = t1
+		
+		
+	la t0, CHITAURI_ATIVO #carrega em t0 a posicao inicial do chitauri
+	lw t1, 0(t0)    #carrega em t1 se ele esta ativo
+	li t2, 1          #sera usado para verificar se ele ja apareceu na tela
+	beq t1, t2, MOV_CHITAURI	# se o estado for ativo, pula
+		# muda o estado para ativo
+		li t2, 1 # muda o estado para ativo
+		la t0, CHITAURI_ATIVO #carrega em t0 a posicao do chitauri
+		sw t2, 0(t0) # CHITAURI_ATIVO = 1
 		
 		# renderiza o chitauri
-		la t0, CHITAURI_POS
-		lw a1, 0(t0)
-		lw a2, 4(t0)
-		la a0, chitauri
-		jal renderImage
+		la t0, CHITAURI_POS #carrega em t0 a nova posicao do chitauri
+		lw a1, 0(t0)  #passa como argumento para print a posicao X do Chitauri,o primeiro print nao buga
+		lw a2, 4(t0) #passa como argumento para print a posicao Y do Chitauri
+		la a0, chitauri #passa como argumento para print a imagem que deve ser printada
+		jal renderImage #renderiza o sprite
 		
-		
-		j CHIT_END
+		    
+                la t0,CHITAURI_MOVE #carrega em t0 o verificador
+                li t6,1 # valor a ser colocado no verificador
+                sw t6,0(t0) # coloca o valor no verificador
+		j CHIT_END #finaliza a aparicao do Chitauri 
 	
-MOV_CHITAURI:	# A FAZER
-	j CHIT_END
+MOV_CHITAURI:
+  
+       la t0,CHITAURI_POS #posicao atual do chitauri
+       lw t1,0(t0)  #carrega em a1 a posicao do chitauri (argumento para print)
+       li t2,1   #verificara se ja chegou na ultima posicao do mapa
+       
+ beq t2,t1,CHITAURI_ERASE #se ele chegou no final, apaga
+ addi t1,t1,-1 # move uma coluna da animacao
+ sw t1,0(t0) #atualiza a posicao do chitauri
+
+	j CHITAURI_PRINT #retorna ao game_loop para que a imagem seja printada la. Caso o print seja aqui, o programa congela na anima
 	
-	
-PROJETIL:
-	la t0, PROJETIL_CONT
-	lw t1, 0(t0)	# t1 = contagem atual
-	
-	li t0, 30000000
-	blt, t1, t0, FIM_PROJ	# se contagem < t0, faz nada
-	
-	# zera a contagem
-	la t0, PROJETIL_CONT
-	sw zero, 0(t0)
-	
-	# define a posicao x do projetil
-	la t1, LOKI_POS
-	lw t2, 0(t1) 	# t2 = coordenada 'x' atual do loki
-	lw t3, 4(t1)	# t3 = coordenada 'y' do loki
-	
-	la t0, PROJETIL_POS
-	sw t2, 0(t0)	# registra a coordenada 'y' fixa
-	
-	# incrementa 1 a coordenada y
-	la t0, PROJETIL_POS
-	lw t1, 4(t0)
-	addi t1, t1, 2	# desce a posicao y do sprite de 2 em 2 pixels
-	sw t1, 4(t0)
-	li s0, 200
-	bgt t1, s0, FIM_PROJ
-	
-	# renderiza o fundo
-	jal renderFundo
-	
-	# renderiza o projetil
-	la t0, PROJETIL_POS
-	lw a1, 0(t0)
-	lw a2, 4(t0)
-	la a0, projetil
-	jal renderImage
-	
-	
-	
-	
-	
-	FIM_PROJ:
-	addi t1, t1, 1	# incrementa 1 na contagem
-	sw t1, 0(t0)	# registra a contagem
-	ret
+CHITAURI_ERASE: #se o chitauri chegou na ultima posicao,para de aparecer
+
+la t0,CHITAURI_MOVE #atualiza para 2 o verificador do chitauri
+li t2,2 
+sw t2,0(t0) #agora o verificador tem valor 2, ou seja, o chitauri deve sumir, pois ja se moveu completamente
+j CHIT_END
 	
 CARREGA_FASE2:
 	li t0,1
@@ -879,24 +963,3 @@ CARREGA_FASE2:
 	li t2,200
 	sw t2,4(s6)			# redefine o y do hulk
 	j CARREGA_FUNDO
-
-renderFundo: # carrega todos os elementos de novo
-	la a0, fundo1
-	li a1, 0
-	li a2, 0
-	jal renderImage
-	
-	j PRINT_JANELAS
-	
-	la t0, HULK_POS
-	lw a1, 0(t0)
-	lw a2, 4(t0)
-	jal renderImage
-	
-	la t0, LOKI_POS
-	lw a1, 0(t0)
-	lw a2, 0(t0)
-	jal renderImage
-	
-	ret
-	
