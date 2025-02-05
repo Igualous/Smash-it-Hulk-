@@ -16,7 +16,17 @@
 
 
 # lista de nota, duracao, nota2, duracao2, ..
-NOTAS:	#Refr�o(14 notas por linha = 28)
+NOTAS:	#68 notas
+	#Tema 2(11 notas por linha = 44)
+	60,2200,67,550,65,500,63,600,65,500,67,700,60,1700,67,550,65,500,63,700,62,700,
+	60,2200,67,550,65,500,63,600,65,500,67,700,60,1700,67,550,65,500,63,700,62,700,
+	72,2200,79,550,77,500,75,600,77,500,79,700,72,1700,79,550,77,500,75,700,74,700,
+	72,2200,79,550,77,500,75,600,77,500,79,700,72,1700,79,550,77,500,75,700,74,700,
+	#Ponte (8 notas por linha = 24)
+	63,300,60,300,60,300,63,300,63,300,60,300,60,300,63,300,
+	63,300,60,300,60,300,63,300,63,300,60,300,60,300,63,300,
+	46,300,48,800,48,300,50,800,58,300,60,800,60,300,62,800,
+NOTAS_VITORIA:	#28 notas
 	60,2500,60,500,60,750,67,250,65,2010,63,1000,62,1000,60,2500,60,500,60,750,67,250,69,1000,65,1000,67,2010,
 	72,2500,72,500,72,750,79,250,77,2010,75,1000,74,1000,72,2500,72,500,72,750,79,250,81,1000,77,1000,79,4000,
 
@@ -42,6 +52,7 @@ NOTAS:	#Refr�o(14 notas por linha = 28)
 .include "../DATA/porta.data"
 .include "../DATA/porta_quebrada.data"
 .include "../DATA/tela.data"
+.include "../DATA/tela_vit.data"
 
 #############  SETUP INICIAL
 # posicoes iniciais
@@ -86,7 +97,7 @@ j LOOP5
 mainMenuSelect:
 MUSIC:
     
-    li s1,28        # le o numero de notas em s1
+    li s1,68        # le o numero de notas em s1
     la s0,NOTAS        # define o endere�o das notas
     li a2,48        # define o instrumento
     li a3,127        # define o volume
@@ -721,6 +732,8 @@ VER_VITORIA:
 	la s0, contagem
 	lw s2, 0(s0)	# s2 = contagem geral
 	
+	li t0, 18
+	beq s2, t0, ZEROU
 	li t0, 9
 	bne s2, t0, NAO_VENCEU # se contagem < 9, nao venceu
 	lw t1,0(a4)
@@ -900,3 +913,47 @@ renderFundo: # carrega todos os elementos de novo
 	
 	ret
 	
+ZEROU:
+	li a7,32
+	li a0,1000
+	ecall					# faz um sleep de 1 segundo
+	CARREGA_VITORIA:               # carrega a imagem no frame 0
+		li t1,0xFF000000	# endereco inicial da Memoria VGA - Frame 0
+		li t2,0xFF012C00	# endereco final 
+		la t4,tela_vit
+		j CONTINUAR_FUNDO_VITORIA
+		CONTINUAR_FUNDO_VITORIA: addi t4,t4,8		# primeiro pixels depois das informa??es de nlin ncol
+	LOOP2: 	beq t1,t2,DONE_VITORIA		# Se for o ultimo endereco ent?o sai do loop
+		lw t3,0(t4)		# le um conjunto de 4 pixels : word
+		sw t3,0(t1)		# escreve a word na mem?ria VGA
+		addi t1,t1,4		# soma 4 ao endereco
+		addi t4,t4,4
+		j LOOP2			# volta a verificar
+	DONE_VITORIA:
+		MUSIC_VITORIA:
+		
+			li s1,28        # le o numero de notas em s1
+			la s0,NOTAS_VITORIA        # define o endere�o das notas
+			li a2,48        # define o instrumento
+			li a3,127        # define o volume
+			li t0, 0
+
+		LOOP_NOTAS_VITORIA:    
+			bge t0,s1, DONE_MUSIC_VITORIA        # contador chegou no final? ent�o  v� para FIM
+			lw a0,0(s0)        # le o valor da nota
+			lw a1,4(s0)        # le a duracao da nota
+			
+			li a7,31        # define a chamada de syscall
+			ecall            # toca a nota
+			
+			mv a0,a1        # passa a dura��o da nota para a pausa
+			li a7,32        # define a chamada de syscal 
+			ecall            # realiza uma pausa de a0 ms
+			
+			addi s0,s0,8        # incrementa para o endere�o da pr�xima nota
+			
+			addi t0,t0,1        # incrementa o contador de notas
+			j LOOP_NOTAS_VITORIA
+		DONE_MUSIC_VITORIA:
+			li a7,10
+			ecall 				# ecall para o exit
