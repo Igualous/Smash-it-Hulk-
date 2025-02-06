@@ -477,15 +477,21 @@ FIM_KEY:	ret				# retorna
 #Os registradores a0,a1 e a2 sao os argumentos passados para a funcao print
 
 CHAR_CIMA:
-
-
- 
-    	la a0, hulk_parado #carrega as dimensoes do hulk em a0
+    la a0, hulk_parado #carrega as dimensoes do hulk em a0
 	la s6,HULK_POS #posicao atual
 	lw t2,0(s6) #passa a posicao antes do movimento para a antiga
 	lw a2, 4(s6)  #carrega em a2 a posicao y atual do personagem
 	addi a2, a2, -60 #move o hulk 
 	blt a2,s9,PARA #limite do mapa
+	lw t0,0(a4)	#verifica a fase
+	beqz t0,CIMA_FASE1	#se for a fase1 pula essa parte
+
+	#Impedindo o hulk de subir pelo obstáculo
+	lw t0,4(s6) #guarda em t0 o y atual do hulk
+	li t1,140 #guarda 140 em t1
+	beq t0,t1,PARA #se for 140, impede de subir
+
+	CIMA_FASE1:
 	jal renderImage #renderiza o sprite na nova posicao
 	sw a2, 4(s6) # atualiza a posicao y do personagem
 	j PRINT_JANELAS
@@ -496,16 +502,11 @@ CHAR_CIMA:
 	j GAME_LOOP
 	
 CHAR_ESQ:
-
- 
- 
- 
- 
 	la a0, hulk_parado #carrega as dimensoes do hulk em a0
 	la s6,HULK_POS
 	lw a1,0(s6)        #carrega em a1 a posicao x atual do personagem
-        addi a1, a1, -50   #move o hulk para esquerda
-        blt a1,s4,PARA2     #limite do mapa
+    addi a1, a1, -50   #move o hulk para esquerda
+    blt a1,s4,PARA2     #limite do mapa
 	jal renderImage    #renderiza o sprite na nova posicao
 	sw a1, 0(s6)       # atualiza a posicao x do personagem
 	j PRINT_JANELAS
@@ -516,14 +517,8 @@ CHAR_ESQ:
 	j GAME_LOOP
 	
 CHAR_BAIXO:
-
-
- 
- 
-        la a0, hulk_parado #carrega as dimensoes do hulk em a0
-        la s6,HULK_POS
-       
-    
+    la a0, hulk_parado #carrega as dimensoes do hulk em a0
+    la s6,HULK_POS
 	lw a2, 4(s6)       #carrega em a2 a posicao y atual do personagem
 	addi a2, a2, 60   #move o hulk para baixo
 	bgt a2,s5,PARA3   #limite do mapa
@@ -535,25 +530,38 @@ CHAR_BAIXO:
 	PARA3:
 	addi a2,a2,-60
 	j GAME_LOOP
+
 CHAR_DIR:
-
-
- 
 	la a0, hulk_parado #carrega as dimensoes do hulk em a0
 	la s6,HULK_POS
-	
 	lw a1,0(s6)        #carrega em a1 a posicao x atual do personagem
-        addi a1, a1, 50    #move o hulk para direita
-        bgt a1,s8,PARA4     #limite do mapa
+    addi a1, a1, 50    #move o hulk para direita
+	bgt a1,s8,PARA4     #limite do mapa
+	DIR_FASE1:
 	jal renderImage    #renderiza o sprite na nova posicao
 	sw a1, 0(s6)       # atualiza a posicao x do personagem
+	
 	j PRINT_JANELAS
 	j GAME_LOOP
 	#ret
 	PARA4:
 	addi a1,a1,-50
-	j GAME_LOOP
+	lw t0,0(a4)	#verifica a fase
+	beqz t0,DIR_FASE1	#se for a fase1 pula essa parte
+
+	#Verificando y do hulk para o portal
+	lw t0,4(s6)	#guarda em t0 o y atual do hulk
+	li t1,200 #y=200 requisito 1 para que o hulk entre no portal
+	bne t0,t1,DIR_FASE1 #se não cumprir o requisito, é como se estivesse na fase 1
+
+	#Teleportando o hulk
+	addi a1,a1,-100
+	li a2,80
+	sw a2, 4(s6)	   # atualiza a posicao y do personagem 
 	
+	j DIR_FASE1
+	
+
 QUEBRA_JAN:
        
       
@@ -726,8 +734,8 @@ QUEBRA_JAN:
 	ecall
 	
 	j PRINT_JANELAS
-	
-	
+		
+
 VER_VITORIA:
 	la s0, contagem
 	lw s2, 0(s0)	# s2 = contagem geral
@@ -742,6 +750,7 @@ VER_VITORIA:
 	
 	NAO_VENCEU:
 	ret
+
 VER_DERROTA:
 	#la a0, DERROTA		# tela GAMEOVER
 	#li a1, 0
@@ -749,6 +758,7 @@ VER_DERROTA:
 	#jal renderImage 	
 	# j END
 	ret
+
 
 MOV_LOKI:
         
@@ -836,7 +846,6 @@ CHITAURI:
 MOV_CHITAURI:	# A FAZER
 	j CHIT_END
 	
-	
 PROJETIL:
 	la t0, PROJETIL_CONT
 	lw t1, 0(t0)	# t1 = contagem atual
@@ -883,6 +892,7 @@ PROJETIL:
 	sw t1, 0(t0)	# registra a contagem
 	ret
 	
+
 CARREGA_FASE2:
 	li t0,1
 	sw t0,0(a4)			# alterando numero da fase para 1(fase 2)
