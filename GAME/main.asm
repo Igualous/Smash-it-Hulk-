@@ -41,6 +41,7 @@ NOTAS_VITORIA:	#28 notas
 .include "../DATA/hulk_pulando_e.data"
 .include "../DATA/hulk_pulando_cima.data"
 .include "../DATA/hulk_pulando_baixo.data"
+.include "../DATA/laser.data"
 .include "../DATA/loki_ativo.data"
 .include "../DATA/loki_parado.data"
 .include "../DATA/loki_fundo.data"
@@ -79,7 +80,7 @@ JANELAS_QUEBRADAS: .word 0,0,0,0,0,0,0,0,0 # 0 = inteira; 1 = quebrada
 contagem: .word 0
 pontos: .word 0
 vidas: .word 3
-fase: .word 0
+fase: .word 1
 ##############
 .text
 #### START
@@ -934,6 +935,14 @@ PRINT_PORTAIS:
 	la a0,portal2		# printa portal2 e define posições x=60, y=60 
 	li a1, 60
 	li a2, 60
+	jal renderImage
+	la a0,chitauri
+	li a1, 243
+	li a2, 95
+	jal renderImage
+	la a0,laser
+	li a1, 0
+	li a2, 110
 	jal renderImage
 	j PRINT_JANELAS
 
