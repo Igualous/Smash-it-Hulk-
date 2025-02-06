@@ -46,7 +46,8 @@ NOTAS_VITORIA:	#28 notas
 .include "../DATA/loki_fundo.data"
 .include "../DATA/chitauri.data"
 .include "../DATA/projetil.data"
-.include "../DATA/portal.data"
+.include "../DATA/portal1.data"
+.include "../DATA/portal2.data"
 .include "../DATA/janela.data"
 .include "../DATA/janela_quebrada.data"
 .include "../DATA/porta.data"
@@ -173,7 +174,7 @@ LOOP1: 	beq t1,t2,DONE		# Se for o ultimo endereco ent?o sai do loop
 	j LOOP1			# volta a verificar
 
 DONE:
-	lw t0,0(a0)
+	lw t0,0(a4)
 	beqz t0,PRINT_JANELAS		# se a fase for 0 (1), printa as janelas nos status da fase 1
 	la t1,JANELAS_QUEBRADAS
 	sw zero,0(t1)				# zera todas as janelas para a fase 2
@@ -185,8 +186,7 @@ DONE:
 	sw zero,24(t1)
 	sw zero,28(t1)
 	sw zero,32(t1)
-
-
+	j PRINT_PORTAIS
 	
 # Renderiza as janelas
 PRINT_JANELAS:
@@ -892,6 +892,17 @@ CARREGA_FASE2:
 	li t2,200
 	sw t2,4(s6)			# redefine o y do hulk
 	j CARREGA_FUNDO
+
+PRINT_PORTAIS:
+	la a0,portal1		# printa portal1 e define posições x=217, y=180 
+	li a1, 217
+	li a2, 180
+	jal renderImage
+	la a0,portal2		# printa portal2 e define posições x=60, y=60 
+	li a1, 60
+	li a2, 60
+	jal renderImage
+	j PRINT_JANELAS
 
 renderFundo: # carrega todos os elementos de novo
 	la a0, fundo1
