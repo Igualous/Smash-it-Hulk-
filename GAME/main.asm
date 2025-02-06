@@ -507,6 +507,7 @@ CHAR_ESQ:
 	lw a1,0(s6)        #carrega em a1 a posicao x atual do personagem
     addi a1, a1, -50   #move o hulk para esquerda
     blt a1,s4,PARA2     #limite do mapa
+	ESQ_FASE1:
 	jal renderImage    #renderiza o sprite na nova posicao
 	sw a1, 0(s6)       # atualiza a posicao x do personagem
 	j PRINT_JANELAS
@@ -514,7 +515,20 @@ CHAR_ESQ:
 	#ret
 	PARA2:
 	addi a1,a1,50
-	j GAME_LOOP
+	lw t0,0(a4)	#verifica a fase
+	beqz t0,ESQ_FASE1	#se for a fase1 pula essa parte
+
+	#Verificando y do hulk para o portal
+	lw t0,4(s6)	#guarda em t0 o y atual do hulk
+	li t1,80 #y=80 requisito 1 para que o hulk entre no portal
+	bne t0,t1,ESQ_FASE1 #se não cumprir o requisito, é como se estivesse na fase 1
+
+	#Teleportando o hulk
+	addi a1,a1,100
+	li a2,200
+	sw a2, 4(s6)	   # atualiza a posicao y do personagem 
+
+	j ESQ_FASE1
 	
 CHAR_BAIXO:
     la a0, hulk_parado #carrega as dimensoes do hulk em a0
@@ -522,6 +536,15 @@ CHAR_BAIXO:
 	lw a2, 4(s6)       #carrega em a2 a posicao y atual do personagem
 	addi a2, a2, 60   #move o hulk para baixo
 	bgt a2,s5,PARA3   #limite do mapa
+	lw t0,0(a4)	#verifica a fase
+	beqz t0,BAIXO_FASE1	#se for a fase1 pula essa parte
+
+	#Impedindo o hulk de descer pelo obstáculo
+	lw t0,4(s6) #guarda em t0 o y atual do hulk
+	li t1,80 #guarda 80 em t1
+	beq t0,t1,PARA3 #se for 80, impede de descer
+
+	BAIXO_FASE1:
 	jal renderImage    #renderiza o sprite na nova posicao
 	sw a2, 4(s6)       # atualiza a posicao y do personagem
 	j PRINT_JANELAS
