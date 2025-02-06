@@ -385,12 +385,12 @@ GAME_LOOP:
 	
 	CHITAURI_PRINT:
 
-	la a5, chitauri #carrega o tamanho da imagem em a5
+	la a0, chitauri #carrega o tamanho da imagem em a5
 	la t0, CHITAURI_POS  #carrega em t0 a word que contem as posicoes xy do chitauri
 	lw a1, 0(t0)  #carrega em t0 o numero que esta na primeira word de CHITAURI_POS(esse numero e a posicao x)
 	lw a2, 4(t0)  #carrega em t0 o numero que esta na segunda word(offset da word = 4) de CHITAURI_POS(esse numero e a posicao y)
 	
-	jal renderCHITAURI #apos colocar todos os argumentos necessarios
+	jal renderImage #apos colocar todos os argumentos necessarios
         li a7,32 #ecall de pausa
         li a0,1 #1 milesimo por pixel
         ecall
@@ -482,68 +482,7 @@ renderImage:
 	
 	##essa funcao deve renderizar o chitauri separadamente para que ele e o hulk nao buguem na mesma posicao
 	
-	renderCHITAURI:
-	# Argumentos da fun??o:
-	# a5 cont?m o endere?o inicial da imagem
-	# a6 cont?m a posi??o X da imagem
-	# a3 cont?m a posi??o Y da imagem
 	
-	
-	lw		s0, 0(a5) # Guarda em s0 a largura da imagem
-	lw		s1, 4(a5) # Guarda em s1 a altura da imagem
-	
-	mv		s2, a5 # Copia o endere?o da imagem para s2
-	addi	s2, s2, 8 # Pula 2 words - s2 agora aponta para o primeiro pixel da imagem
-	
-	li		s3, 0xff000000 # carrega em s3 o endere?o do bitmap display frame 0
-	
-	li		t1, 320 # t1 ? o tamanho de uma linha no bitmap display
-	mul		t1, t1, a2 # multiplica t1 pela posi??o Y desejada no bitmap display.
-	# Multiplicamos 320 pela posi??o desejada para obter um offset em rela??o ao endere?o inicial do bimap display correspondente ? linha na qual queremos desenhar a imagem. Basta agora obter mais um offset para chegar at? a coluna que queremos. Isso ? mais simples, basta adicionar a posi??o X.
-	add		t1, t1, a1
-	# t1 agora tem o offset completo, basta adicion?-lo ao endere?o do bitmap.
-	add		s3, s3, t1
-	# O endere?o em s3 agora representa exatamente a posi??o em que o primeiro pixel da nossa imagem deve ser renderizado.
-
-	blt		a1, zero, endRenderz # se X < 0, n?o renderizar
-	blt		a2, zero, endRenderz # se Y < 0, n?o renderizar
-	
-	li		t1, 320
-	add		t0, s0, a1
-	bgt		t0, t1, endRenderz # se X + larg > 320, n?o renderizar
-	
-	li		t1, 240
-	add		t0, s1, a2
-	bgt		t0, t1, endRenderz # se Y + alt > 240, n?o renderizar
-	
-	li		t1, 0 # t1 = Y (linha) atual
-	lineLoopz:
-		bge		t1, s1, endRenderz # Se terminamos a ?ltima linha da imagem, encerrar
-		li		t0, 0 # t0 = X (coluna) atual
-		
-		columnLoopz:
-			bge		t0, s0, columnEndz # Se terminamos a linha atual, ir pra pr?xima
-			
-			lb		t2, 0(s2) # Pega o pixel da imagem
-			sb		t2, 0(s3) # P?e o pixel no display
-			
-			# Incrementa os endere?os e o contador de coluna
-			addi	s2, s2, 1
-			addi	s3, s3, 1
-			addi	t0, t0, 1
-			j		columnLoopz
-			
-		columnEndz:
-		
-		addi	s3, s3, 320 # pr?xima linha no bitmap display
-		sub		s3, s3, s0 # reposiciona o endere?o de coluna no bitmap display (subtraindo a largura da imagem). Note que essa subtra??o ? necess?ria - verifique os efeitos da aus?ncia dela voc? mesmo, montando esse c?digo.
-		
-		addi	t1, t1, 1 # incrementar o contador de altura
-		j		lineLoopz
-		
-	endRenderz:
-	
-	ret	
 ### Apenas verifica se h? tecla pressionada (ideal para jogo dinamico)
 KEY:	li t1,0xFF200000		# carrega o endere?o de controle do KDMMIO
 	lw t0,0(t1)			# Le bit de Controle Teclado
