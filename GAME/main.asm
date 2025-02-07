@@ -27,8 +27,8 @@ NOTAS:	#68 notas
 	63,300,60,300,60,300,63,300,63,300,60,300,60,300,63,300,
 	46,300,48,800,48,300,50,800,58,300,60,800,60,300,62,800,
 NOTAS_FINAL:	#28 notas
-	60,2500,60,500,60,750,67,250,65,2010,63,1000,62,1000,60,2500,60,500,60,750,67,250,69,1000,65,1000,67,2010,
-	72,2500,72,500,72,750,79,250,77,2010,75,1000,74,1000,72,2500,72,500,72,750,79,250,81,1000,77,1000,79,4000,
+	72,2500,72,500,72,750,79,250,77,2010,75,1000,74,1000,72,2500,72,500,72,750,79,250,81,1000,77,1000,79,2010,
+	84,2500,84,500,84,750,91,250,89,2010,87,1000,86,1000,84,2500,84,500,84,750,91,250,93,1000,89,1000,91,4000,
 NOTAS_VITORIA:
 	84,50,88,50,91,50,96,850
 
@@ -42,7 +42,8 @@ NOTAS_VITORIA:
 .include "../DATA/hulk_pulando_e.data"
 .include "../DATA/hulk_pulando_cima.data"
 .include "../DATA/hulk_pulando_baixo.data"
-.include "../DATA/laser.data"
+.include "../DATA/laser1.data"
+.include "../DATA/laser2.data"
 .include "../DATA/loki_ativo.data"
 .include "../DATA/loki_parado.data"
 .include "../DATA/loki_fundo.data"
@@ -67,6 +68,8 @@ LOKI_POS:	.word 130,18
 OLD_LOKI_POS:	.word 130,18
 LOKI_CONT: 	.word 0
 
+LASER_CONT: .word 0
+
 PROJETIL_POS: .word 120, 23
 PROJETIL_CONT: .word 0
 projetil_ativo_cont: .word 0
@@ -81,7 +84,7 @@ JANELAS_QUEBRADAS: .word 0,0,0,0,0,0,0,0,0 # 0 = inteira; 1 = quebrada
 contagem: .word 0
 pontos: .word 0
 vidas: .word 3
-fase: .word 0
+fase: .word 1
 ##############
 .text
 #### START
@@ -368,8 +371,9 @@ GAME_LOOP:
 	j MOV_LOKI
 	LOKI_CHECK:
 	
-	
-	
+	j PRINT_LASER
+	LASER_CHECK:
+
 	jal CHITAURI
 	CHIT_END:
 	# 4: verifica vitoria ou derrota
@@ -969,11 +973,46 @@ PRINT_PORTAIS:
 	li a1, 243
 	li a2, 95
 	jal renderImage
-	la a0,laser
-	li a1, 0
-	li a2, 110
-	jal renderImage
 	j PRINT_JANELAS
+
+PRINT_LASER:
+	lw t0,0(a4)
+	beqz t0,FIM_LASER
+	la t4,LASER_CONT
+	lw t1,0(t4)
+    li t2, 800000
+	li t3, 400000
+
+	beq t1,t3,LASER1
+	beq t1,t2,LASER2
+	addi t1,t1,1
+	sw t1,0(t4)
+	j FIM_LASER
+
+	LASER1:
+		la a0,laser1
+		li a1, 0
+		li a2, 112
+		jal renderImage
+		li t1, 400001
+		sw t1,0(t4)
+		j FIM_LASER
+
+	LASER2:
+		la a0,laser2
+		li a1, 0
+		li a2, 112
+		jal renderImage
+		li t1,0
+		sw t1,0(t4)
+
+	FIM_LASER:
+		# garante que nao vai bugar
+		la t5, HULK_POS
+		lw a1, 0(t5)
+		lw a2, 4(t5)
+		j LASER_CHECK
+
 
 renderFundo: # carrega todos os elementos de novo
 	la a0, fundo1
@@ -1014,7 +1053,7 @@ ZEROU:
 		
 			li s1,28        # le o numero de notas em s1
 			la s0,NOTAS_FINAL        # define o endere�o das notas
-			li a2,48        # define o instrumento
+			li a2,0        # define o instrumento
 			li a3,127        # define o volume
 			li t0, 0
 
