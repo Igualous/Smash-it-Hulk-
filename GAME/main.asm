@@ -84,7 +84,7 @@ JANELAS_QUEBRADAS: .word 0,0,0,0,0,0,0,0,0 # 0 = inteira; 1 = quebrada
 contagem: .word 0
 pontos: .word 0
 vidas: .word 3
-fase: .word 1
+fase: .word 0
 ##############
 .text
 #### START
