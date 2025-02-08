@@ -57,6 +57,7 @@ NOTAS_VITORIA:
 .include "../DATA/porta_quebrada.data"
 .include "../DATA/tela.data"
 .include "../DATA/tela_vit.data"
+.include "../DATA/tela_derrota.data"
 
 #############  SETUP INICIAL
 # posicoes iniciais
@@ -87,6 +88,7 @@ vidas: .word 3
 fase: .word 0
 ##############
 .text
+INICIO: # endereco para reiniciar o jogo
 #### START
 # Carrega tela de menu
 la a4,fase			# define a4 como numero da fase
@@ -473,6 +475,10 @@ KEY:	li t1,0xFF200000		# carrega o endere?o de controle do KDMMIO
 	
 	li t0, 'e'
 	beq t2, t0, QUEBRA_JAN
+
+	li t0, 'v'
+	beq, t2, t0, PERDE_PONTO
+
 FIM_KEY:	ret				# retorna
 
 # FUNCOES DE MOVIMENTACAO
@@ -781,14 +787,99 @@ VER_VITORIA:
 	NAO_VENCEU:
 	ret
 
+# FUNCAO PARA TESTE DE DERROTA
+PERDE_PONTO:	
+	la t0, vidas
+	lw t1, 0(t0)
+	addi t1, t1, -1 	# diminui 1 ponto de vida arbitrariamente
+	sw t1, 0(t0)
+
+	ret
 VER_DERROTA:
-	#la a0, DERROTA		# tela GAMEOVER
-	#li a1, 0
-	#li a2, 0
-	#jal renderImage 	
-	# j END
+	la t0, vidas
+	lw t1, 0(t0)
+	bnez t1, PULA_DER
+	la a0, tela_derrota		# tela GAMEOVER
+	li a1, 0
+	li a2, 0
+	jal renderImage 
+
+	# Codigo abaixo obtem a entrada
+	TELA_FIM:
+        li    t3, 0xFF200000 # carrega em t3 o endere?o do status do teclado.
+        lb     t1, 0(t3) # carrega o status do teclado em t1.
+
+        andi    t1, t1, 1 # isso eh um processo de mascaramento. Apenas queremos saber sobre o primeiro bit de t1, que indica se alguma tecla foi pressionada.
+
+        beq    t1, zero, TELA_FIM #se a tecla 1 n?o foi pressionada, volta a verificar at? que a mesma seja acionada
+
+        lb    t1, 4(t3) #ao ser pressionado, carrega 1 em t1 para fins de compara??o
+
+        li    t2, 0x031 #valor do 1 na tabela ASCII
+        beq    t1, t2, REINICIA_JOGO #se o que tiver sido registrado no teclado foi 1, reinicia o jogo
+
+        li    t2, 0x032 #valor do 2 na tabela ASCII
+        bne    t1, t2, loop_fim #Se o numero digitado n?o foi 2 nem 1, volta a esperar um input valido 
+        j    END #se o input tiver sido 2, encerra o programa 
+		loop_fim:
+        j    TELA_FIM
+
+	PULA_DER:
 	ret
 
+REINICIA_JOGO:	# volta tudo para as posicoes iniciais
+	la t0, HULK_POS
+	li t1, 85
+	li t2, 200
+	sw t1, 0(t0)
+	sw t2, 4(t0)
+
+	la t0, LOKI_POS
+	li t1, 130
+	li t2, 18
+	sw t1, 0(t0)
+	sw t2, 4(t0)
+
+	la t0, LOKI_CONT
+	sw zero, 0(t0)
+
+	la t0, LASER_CONT
+	sw zero, 0(t0)
+
+	la t0, CHITAURI_POS
+	li t1, 280
+	li t2, 140
+	sw t1, 0(t0)
+	sw t2, 4(t0)
+
+	la t0, CHITAURI_ATIVO
+	sw zero, 0(t0)
+
+	la t0, JANELAS_QUEBRADAS
+	sw zero, 0(t0)
+	sw zero, 4(t0)
+	sw zero, 8(t0)
+	sw zero, 12(t0)
+	sw zero, 16(t0)
+	sw zero, 20(t0)
+	sw zero, 24(t0)
+	sw zero, 28(t0)
+	sw zero, 32(t0)
+
+	la t0, contagem
+	sw zero, 0(t0)
+
+	la t0, pontos
+	sw zero, 0(t0)
+
+	la t0, vidas
+	li t1, 3
+	sw t1, 0(t0)
+
+	la t0, fase
+	sw zero, 0(t0)
+
+	j INICIO
 
 MOV_LOKI:
         
