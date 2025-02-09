@@ -356,6 +356,8 @@ PRINT_HULK:
 	lw a2, 4(t0)  #carrega em t0 o numero que esta na segunda word(offset da word = 4) de HULK_POS(esse numero e a posicao y)
 	
 	jal renderImage
+
+	j PRINTA_HUD
 ###### GAME LOOP PRINCIPAL ######### 
 GAME_LOOP:  
 
@@ -387,10 +389,6 @@ GAME_LOOP:
 	# 4: verifica vitoria ou derrota
 	jal VER_VITORIA
 	jal VER_DERROTA
-	
-	# 5: HUD
-	j PRINTA_HUD
-	FIM_HUD:
 
 	j GAME_LOOP
 ###### ################### #########	
@@ -811,7 +809,8 @@ PERDE_PONTO:
 	    li a3,127        # define o volume
 	    li a7,31        # define o syscall
 	    ecall            # toca a nota
-	ret
+
+		j PRINTA_HUD
 VER_DERROTA:
 	la t0, vidas
 	lw t1, 0(t0)
@@ -1223,4 +1222,5 @@ PRINTA_HUD:
 	lw a1, 0(t0)
 	lw a2, 0(t0)
 	
-	j FIM_HUD
+	j GAME_LOOP
+	
