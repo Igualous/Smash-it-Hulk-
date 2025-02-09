@@ -58,6 +58,12 @@ NOTAS_VITORIA:
 .include "../DATA/tela.data"
 .include "../DATA/tela_vit.data"
 .include "../DATA/tela_derrota.data"
+.include "../DATA/hulk_cabeca.data"
+.include "../DATA/hulk_morte.data"
+
+# HUD
+STR1: .string "SCORE\n"
+STR2: .string "TIME "
 
 #############  SETUP INICIAL
 # posicoes iniciais
@@ -84,7 +90,7 @@ janelaY:	.word 70
 JANELAS_QUEBRADAS: .word 0,0,0,0,0,0,0,0,0 # 0 = inteira; 1 = quebrada
 contagem: .word 0
 pontos: .word 0
-vidas: .word 3
+vidas: .word 3	# vidas iniciais: 3
 fase: .word 0
 ##############
 .text
@@ -350,6 +356,8 @@ PRINT_HULK:
 	lw a2, 4(t0)  #carrega em t0 o numero que esta na segunda word(offset da word = 4) de HULK_POS(esse numero e a posicao y)
 	
 	jal renderImage
+
+	j PRINTA_HUD
 ###### GAME LOOP PRINCIPAL ######### 
 GAME_LOOP:  
 
@@ -376,12 +384,12 @@ GAME_LOOP:
 	j PRINT_LASER
 	LASER_CHECK:
 
-	jal CHITAURI
+	j CHITAURI
 	CHIT_END:
 	# 4: verifica vitoria ou derrota
 	jal VER_VITORIA
 	jal VER_DERROTA
-	
+
 	j GAME_LOOP
 ###### ################### #########	
 END:
@@ -794,7 +802,15 @@ PERDE_PONTO:
 	addi t1, t1, -1 	# diminui 1 ponto de vida arbitrariamente
 	sw t1, 0(t0)
 
-	ret
+	# efeito sonoro
+	    li a0, 50    # define a nota
+	    li a1,800        # define a dura��o da nota em ms
+	    li a2,120        # define o instrumento
+	    li a3,127        # define o volume
+	    li a7,31        # define o syscall
+	    ecall            # toca a nota
+
+		j PRINTA_HUD
 VER_DERROTA:
 	la t0, vidas
 	lw t1, 0(t0)
@@ -995,7 +1011,7 @@ PROJETIL:
 	bgt t1, s0, FIM_PROJ
 	
 	# renderiza o fundo
-	jal renderFundo
+	#jal renderFundo
 	
 	# renderiza o projetil
 	la t0, PROJETIL_POS
@@ -1103,27 +1119,6 @@ PRINT_LASER:
 		lw a1, 0(t5)
 		lw a2, 4(t5)
 		j LASER_CHECK
-
-
-renderFundo: # carrega todos os elementos de novo
-	la a0, fundo1
-	li a1, 0
-	li a2, 0
-	jal renderImage
-	
-	j PRINT_JANELAS
-	
-	la t0, HULK_POS
-	lw a1, 0(t0)
-	lw a2, 4(t0)
-	jal renderImage
-	
-	la t0, LOKI_POS
-	lw a1, 0(t0)
-	lw a2, 0(t0)
-	jal renderImage
-	
-	ret
 	
 ZEROU:
 	jal MUSICA_VITORIA
@@ -1167,3 +1162,65 @@ ZEROU:
 		DONE_MUSIC_FINAL:
 			li a7,10
 			ecall 				# ecall para o exit
+
+PRINTA_HUD:
+
+	la t0, vidas
+	lw t2, 0(t0)	# t2 = vidas
+
+	li t0, 3
+	bne t2, t0, PROX_VIDAS	# se vidas < 3, PROX_VIDAS
+		la a0, hulk_cabeca
+		li a1, 290
+		li a2, 18
+		jal renderImage
+
+		li a1, 260
+		jal renderImage
+
+		li a1, 230
+		jal renderImage
+
+		j PULA_HUD
+	PROX_VIDAS:
+
+	li t0, 2
+	bne t2, t0, PROX_VIDAS2	# se vidas < 2, PROX_VIDAS2
+		la a0, hulk_morte
+		li a1, 290
+		li a2, 18
+		jal renderImage
+
+		la a0, hulk_cabeca
+		li a1, 260
+		jal renderImage
+
+		li a1, 230
+		jal renderImage
+	
+		j PULA_HUD
+	PROX_VIDAS2:
+	li t0, 1
+	bne t2, t0, PULA_HUD
+	la a0, hulk_morte
+		li a1, 290
+		li a2, 18
+		jal renderImage
+
+		li a1, 260
+		jal renderImage
+
+		la a0, hulk_cabeca
+		li a1, 230
+		jal renderImage
+
+
+	PULA_HUD:
+	# garante que nao vai bugar
+
+	la t0, LOKI_POS
+	lw a1, 0(t0)
+	lw a2, 0(t0)
+	
+	j GAME_LOOP
+	
