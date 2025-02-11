@@ -60,6 +60,29 @@ NOTAS_VITORIA:
 .include "../DATA/tela_derrota.data"
 .include "../DATA/hulk_cabeca.data"
 .include "../DATA/hulk_morte.data"
+.include "../DATA/score.data"
+.include "../DATA/tempo.data"
+
+# NUMEROS DE SCORE
+.include "../DATA/um.data"
+.include "../DATA/dois.data"
+.include "../DATA/tres.data"
+.include "../DATA/quatro.data"
+.include "../DATA/cinco.data"
+.include "../DATA/seis.data"
+.include "../DATA/sete.data"
+.include "../DATA/oito.data"
+.include "../DATA/nove.data"
+.include "../DATA/dez.data"
+.include "../DATA/onze.data"
+.include "../DATA/doze.data"
+.include "../DATA/treze.data"
+.include "../DATA/quatorze.data"
+.include "../DATA/quinze.data"
+.include "../DATA/dezesseis.data"
+.include "../DATA/dezessete.data"
+.include "../DATA/dezoito.data"
+
 
 # HUD
 STR1: .string "SCORE\n"
@@ -112,13 +135,13 @@ mainMenuSelect:
 MUSIC:
     
     li s1,68        # le o numero de notas em s1
-    la s0,NOTAS        # define o endere�o das notas
+    la s0,NOTAS        # define o endere?o das notas
     li a2,48        # define o instrumento
     li a3,127        # define o volume
     li t0, 0
 
 LOOP_NOTAS:    
-	bge t0,s1, DONE_MUSIC        # contador chegou no final? ent�o  v� para FIM
+	bge t0,s1, DONE_MUSIC        # contador chegou no final? ent?o  v? para FIM
     lw a0,0(s0)        # le o valor da nota
     lw a1,4(s0)        # le a duracao da nota
 
@@ -130,11 +153,11 @@ LOOP_NOTAS:
     li a7,31        # define a chamada de syscall
     ecall            # toca a nota
     
-    mv a0,a1        # passa a dura��o da nota para a pausa
+    mv a0,a1        # passa a dura??o da nota para a pausa
     li a7,32        # define a chamada de syscal 
     ecall            # realiza uma pausa de a0 ms
     
-    addi s0,s0,8        # incrementa para o endere�o da pr�xima nota
+    addi s0,s0,8        # incrementa para o endere?o da pr?xima nota
     
     addi t0,t0,1        # incrementa o contador de notas
 	j LOOP_NOTAS
@@ -357,7 +380,12 @@ PRINT_HULK:
 	
 	jal renderImage
 
-	j PRINTA_HUD
+# INICIALIZA O HUD
+    j PRINTA_SCORE
+    FIM_SCORE:
+    j PRINTA_TEMPO
+    FIM_TEMPO:
+	j PRINTA_VIDAS
 ###### GAME LOOP PRINCIPAL ######### 
 GAME_LOOP:  
 
@@ -506,7 +534,7 @@ CHAR_CIMA:
 	lw t0,0(a4)	#verifica a fase
 	beqz t0,CIMA_FASE1	#se for a fase1 pula essa parte
 
-	#Impedindo o hulk de subir pelo obstáculo
+	#Impedindo o hulk de subir pelo obst�culo
 	lw t0,4(s6) #guarda em t0 o y atual do hulk
 	li t1,140 #guarda 140 em t1
 	beq t0,t1,PARA #se for 140, impede de subir
@@ -541,7 +569,7 @@ CHAR_ESQ:
 	#Verificando y do hulk para o portal
 	lw t0,4(s6)	#guarda em t0 o y atual do hulk
 	li t1,80 #y=80 requisito 1 para que o hulk entre no portal
-	bne t0,t1,ESQ_FASE1 #se não cumprir o requisito, é como se estivesse na fase 1
+	bne t0,t1,ESQ_FASE1 #se n�o cumprir o requisito, � como se estivesse na fase 1
 
 	#Teleportando o hulk
 	addi a1,a1,100
@@ -559,7 +587,7 @@ CHAR_BAIXO:
 	lw t0,0(a4)	#verifica a fase
 	beqz t0,BAIXO_FASE1	#se for a fase1 pula essa parte
 
-	#Impedindo o hulk de descer pelo obstáculo
+	#Impedindo o hulk de descer pelo obst�culo
 	lw t0,4(s6) #guarda em t0 o y atual do hulk
 	li t1,80 #guarda 80 em t1
 	beq t0,t1,PARA3 #se for 80, impede de descer
@@ -595,7 +623,7 @@ CHAR_DIR:
 	#Verificando y do hulk para o portal
 	lw t0,4(s6)	#guarda em t0 o y atual do hulk
 	li t1,200 #y=200 requisito 1 para que o hulk entre no portal
-	bne t0,t1,DIR_FASE1 #se não cumprir o requisito, é como se estivesse na fase 1
+	bne t0,t1,DIR_FASE1 #se n�o cumprir o requisito, � como se estivesse na fase 1
 
 	#Teleportando o hulk
 	addi a1,a1,-100
@@ -620,7 +648,7 @@ QUEBRA_JAN:
        
        # efeito sonoro
 	    li a0, 40    # define a nota
-	    li a1,800        # define a dura��o da nota em ms
+	    li a1,800        # define a dura??o da nota em ms
 	    li a2,127        # define o instrumento
 	    li a3,127        # define o volume
 	    li a7,31        # define o syscall
@@ -804,13 +832,13 @@ PERDE_PONTO:
 
 	# efeito sonoro
 	    li a0, 50    # define a nota
-	    li a1,800        # define a dura��o da nota em ms
+	    li a1,800        # define a dura??o da nota em ms
 	    li a2,120        # define o instrumento
 	    li a3,127        # define o volume
 	    li a7,31        # define o syscall
 	    ecall            # toca a nota
 
-		j PRINTA_HUD
+		j PRINTA_VIDAS
 VER_DERROTA:
 	la t0, vidas
 	lw t1, 0(t0)
@@ -1043,24 +1071,24 @@ CARREGA_FASE2:
 
 MUSICA_VITORIA:
 	li s1,4        # le o numero de notas em s1
-	la s0,NOTAS_VITORIA        # define o endere�o das notas
+	la s0,NOTAS_VITORIA        # define o endere?o das notas
 	li a2,0        # define o instrumento
 	li a3,127        # define o volume
 	li t0, 0
 
 	LOOP_NOTAS_VITORIA:    
-		beq t0,s1, DONE_MUSIC_VITORIA        # contador chegou no final? ent�o  v� para FIM
+		beq t0,s1, DONE_MUSIC_VITORIA        # contador chegou no final? ent?o  v? para FIM
 		lw a0,0(s0)        # le o valor da nota
 		lw a1,4(s0)        # le a duracao da nota
 		
 		li a7,31        # define a chamada de syscall
 		ecall            # toca a nota
 		
-		mv a0,a1        # passa a dura��o da nota para a pausa
+		mv a0,a1        # passa a dura??o da nota para a pausa
 		li a7,32        # define a chamada de syscal 
 		ecall            # realiza uma pausa de a0 ms
 		
-		addi s0,s0,8        # incrementa para o endere�o da pr�xima nota
+		addi s0,s0,8        # incrementa para o endere?o da pr?xima nota
 		
 		addi t0,t0,1        # incrementa o contador de notas
 		j LOOP_NOTAS_VITORIA
@@ -1068,11 +1096,11 @@ DONE_MUSIC_VITORIA:
 ret
 
 PRINT_PORTAIS:
-	la a0,portal1		# printa portal1 e define posições x=217, y=180 
+	la a0,portal1		# printa portal1 e define posi��es x=217, y=180 
 	li a1, 217
 	li a2, 180
 	jal renderImage
-	la a0,portal2		# printa portal2 e define posições x=60, y=60 
+	la a0,portal2		# printa portal2 e define posi��es x=60, y=60 
 	li a1, 60
 	li a2, 60
 	jal renderImage
@@ -1138,24 +1166,24 @@ ZEROU:
 		MUSIC_FINAL:
 		
 			li s1,28        # le o numero de notas em s1
-			la s0,NOTAS_FINAL        # define o endere�o das notas
+			la s0,NOTAS_FINAL        # define o endere?o das notas
 			li a2,0        # define o instrumento
 			li a3,127        # define o volume
 			li t0, 0
 
 		LOOP_NOTAS_FINAL:    
-			bge t0,s1, DONE_MUSIC_FINAL        # contador chegou no final? ent�o  v� para FIM
+			bge t0,s1, DONE_MUSIC_FINAL        # contador chegou no final? ent?o  v? para FIM
 			lw a0,0(s0)        # le o valor da nota
 			lw a1,4(s0)        # le a duracao da nota
 			
 			li a7,31        # define a chamada de syscall
 			ecall            # toca a nota
 			
-			mv a0,a1        # passa a dura��o da nota para a pausa
+			mv a0,a1        # passa a dura??o da nota para a pausa
 			li a7,32        # define a chamada de syscal 
 			ecall            # realiza uma pausa de a0 ms
 			
-			addi s0,s0,8        # incrementa para o endere�o da pr�xima nota
+			addi s0,s0,8        # incrementa para o endere?o da pr?xima nota
 			
 			addi t0,t0,1        # incrementa o contador de notas
 			j LOOP_NOTAS_FINAL
@@ -1163,8 +1191,7 @@ ZEROU:
 			li a7,10
 			ecall 				# ecall para o exit
 
-PRINTA_HUD:
-
+PRINTA_VIDAS:
 	la t0, vidas
 	lw t2, 0(t0)	# t2 = vidas
 
@@ -1224,3 +1251,152 @@ PRINTA_HUD:
 	
 	j GAME_LOOP
 	
+PRINTA_TEMPO:
+    la a0, tempo
+    li a1, 0
+    li a2, 15
+    jal renderImage
+
+    j FIM_TEMPO
+
+PRINTA_SCORE:
+    la a0, score
+    li a1, 1
+    li a2, 35
+    jal renderImage
+
+	# calcula os pontos
+	la t0, contagem
+	lw t1, 0(t0)	# t1 = contagem (0 - 9)
+
+	la t0, pontos
+	lw t2, 0(t0)	# t2 = pontos
+
+	mv t2, t1	# pontos = contagem
+
+	li t0, 0
+	bne t2, t0, pula_pontos0
+		j FIM_SCORE
+	pula_pontos0:
+	li t0, 1
+	bne t2, t0, pula_pontos1
+		la a0, um
+		j fim_calc
+	pula_pontos1:
+	li t0, 1
+	bne t2, t0, pula_pontos1
+		la a0, um
+		j fim_calc
+	pula_pontos1:
+
+	li t0, 2
+	bne t2, t0, pula_pontos2
+		la a0, dois
+		j fim_calc
+	pula_pontos2:
+
+	li t0, 3
+	bne t2, t0, pula_pontos3
+		la a0, tres
+		j fim_calc
+	pula_pontos3:
+
+	li t0, 4
+	bne t2, t0, pula_pontos4
+		la a0, quatro
+		j fim_calc
+	pula_pontos4:
+
+	li t0, 5
+	bne t2, t0, pula_pontos5
+		la a0, cinco
+		j fim_calc
+	pula_pontos5:
+
+	li t0, 6
+	bne t2, t0, pula_pontos6
+		la a0, seis
+		j fim_calc
+	pula_pontos6:
+
+	li t0, 7
+	bne t2, t0, pula_pontos7
+		la a0, sete
+		j fim_calc
+	pula_pontos7:
+
+	li t0, 8
+	bne t2, t0, pula_pontos8
+		la a0, oito
+		j fim_calc
+	pula_pontos8:
+
+	li t0, 9
+	bne t2, t0, pula_pontos9
+		la a0, nove
+		j fim_calc
+	pula_pontos9:
+
+	li t0, 10
+	bne t2, t0, pula_pontos10
+		la a0, dez
+		j fim_calc
+	pula_pontos10:
+
+	li t0, 11
+	bne t2, t0, pula_pontos11
+		la a0, onze
+		j fim_calc
+	pula_pontos11:
+
+	li t0, 12
+	bne t2, t0, pula_pontos12
+		la a0, doze
+		j fim_calc
+	pula_pontos12:
+
+	li t0, 13
+	bne t2, t0, pula_pontos13
+		la a0, treze
+		j fim_calc
+	pula_pontos13:
+
+	li t0, 14
+	bne t2, t0, pula_pontos14
+		la a0, quatorze
+		j fim_calc
+	pula_pontos14:
+
+	li t0, 15
+	bne t2, t0, pula_pontos15
+		la a0, quinze
+		j fim_calc
+	pula_pontos15:
+
+	li t0, 16
+	bne t2, t0, pula_pontos16
+		la a0, dezesseis
+		j fim_calc
+	pula_pontos16:
+
+	li t0, 17
+	bne t2, t0, pula_pontos17
+		la a0, dezessete
+		j fim_calc
+	pula_pontos17:
+
+	li t0, 18
+	bne t2, t0, pula_pontos18
+		la a0, dezoito
+		j fim_calc
+	pula_pontos18:
+
+
+	fim_calc:
+	
+	# PRINTA O SCORE ATUAL
+	li a1, 47
+	li a2, 40
+	jal renderImage
+
+    j FIM_SCORE
