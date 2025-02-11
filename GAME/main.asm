@@ -31,6 +31,8 @@ NOTAS_FINAL:	#28 notas
 	84,2500,84,500,84,750,91,250,89,2010,87,1000,86,1000,84,2500,84,500,84,750,91,250,93,1000,89,1000,91,4000,
 NOTAS_VITORIA:
 	84,50,88,50,91,50,96,850
+NOTAS_DERROTA:
+	61,2000,59,2000,63,2000,61,2000,59,500,61,500,63,500,66,500,64,500,71,500,64,500,62,1500,61,1500,69,400,68,500,66,400,65,500,66,400,68,500,63,500,66,1500,64,2500
 
 #inclusao das imagens
 
@@ -850,23 +852,48 @@ VER_DERROTA:
 
 	# Codigo abaixo obtem a entrada
 	TELA_FIM:
-        li    t3, 0xFF200000 # carrega em t3 o endere?o do status do teclado.
-        lb     t1, 0(t3) # carrega o status do teclado em t1.
+		MUSIC_DERROTA:
+			li s1,22        # le o numero de notas em s1
+			la s0,NOTAS_DERROTA        # define o endere?o das notas
+			li a2,26        # define o instrumento
+			li a3,127        # define o volume
+			li t0, 0
 
-        andi    t1, t1, 1 # isso eh um processo de mascaramento. Apenas queremos saber sobre o primeiro bit de t1, que indica se alguma tecla foi pressionada.
+		LOOP_NOTAS_DERROTA:    
+			bge t0,s1, DONE_MUSIC_DERROTA        # contador chegou no final? ent?o  v? para FIM
+			lw a0,0(s0)        # le o valor da nota
+			lw a1,4(s0)        # le a duracao da nota
 
-        beq    t1, zero, TELA_FIM #se a tecla 1 n?o foi pressionada, volta a verificar at? que a mesma seja acionada
+			li    t3, 0xFF200000 # carrega em t3 o endere?o do status do teclado.
+			lb     t1, 0(t3) # carrega o status do teclado em t1.
 
-        lb    t1, 4(t3) #ao ser pressionado, carrega 1 em t1 para fins de compara??o
+			andi    t1, t1, 1 # isso eh um processo de mascaramento. Apenas queremos saber sobre o primeiro bit de t1, que indica se alguma tecla foi pressionada.
 
-        li    t2, 0x031 #valor do 1 na tabela ASCII
-        beq    t1, t2, REINICIA_JOGO #se o que tiver sido registrado no teclado foi 1, reinicia o jogo
+			beq    t1, zero, CONTINUAR_MUSICA_DERROTA #se a tecla 1 n?o foi pressionada, volta a verificar at? que a mesma seja acionada
 
-        li    t2, 0x032 #valor do 2 na tabela ASCII
-        bne    t1, t2, loop_fim #Se o numero digitado n?o foi 2 nem 1, volta a esperar um input valido 
-        j    END #se o input tiver sido 2, encerra o programa 
-		loop_fim:
-        j    TELA_FIM
+			lb    t1, 4(t3) #ao ser pressionado, carrega 1 em t1 para fins de compara??o
+
+			li    t2, 0x031 #valor do 1 na tabela ASCII
+			beq    t1, t2, REINICIA_JOGO #se o que tiver sido registrado no teclado foi 1, reinicia o jogo
+
+        	li    t2, 0x032 #valor do 2 na tabela ASCII
+        	bne    t1, t2, loop_fim #Se o numero digitado n?o foi 2 nem 1, volta a esperar um input valido 
+        	j    END #se o input tiver sido 2, encerra o programa 
+			loop_fim:
+			CONTINUAR_MUSICA_DERROTA:
+			li a7,31        # define a chamada de syscall
+			ecall            # toca a nota
+			
+			mv a0,a1        # passa a dura??o da nota para a pausa
+			li a7,32        # define a chamada de syscal 
+			ecall            # realiza uma pausa de a0 ms
+			
+			addi s0,s0,8        # incrementa para o endere?o da pr?xima nota
+			
+			addi t0,t0,1        # incrementa o contador de notas
+			j LOOP_NOTAS_DERROTA
+			DONE_MUSIC_DERROTA:
+			j TELA_FIM
 
 	PULA_DER:
 	ret
@@ -1092,8 +1119,8 @@ MUSICA_VITORIA:
 		
 		addi t0,t0,1        # incrementa o contador de notas
 		j LOOP_NOTAS_VITORIA
-DONE_MUSIC_VITORIA:
-ret
+	DONE_MUSIC_VITORIA:
+	ret
 
 PRINT_PORTAIS:
 	la a0,portal1		# printa portal1 e define posi��es x=217, y=180 
@@ -1170,12 +1197,25 @@ ZEROU:
 			li a2,0        # define o instrumento
 			li a3,127        # define o volume
 			li t0, 0
-
+			
 		LOOP_NOTAS_FINAL:    
 			bge t0,s1, DONE_MUSIC_FINAL        # contador chegou no final? ent?o  v? para FIM
 			lw a0,0(s0)        # le o valor da nota
 			lw a1,4(s0)        # le a duracao da nota
 			
+			li    t3, 0xFF200000 # carrega em t3 o endere?o do status do teclado.
+			lb     t1, 0(t3) # carrega o status do teclado em t1.
+			andi    t1, t1, 1 # isso eh um processo de mascaramento. Apenas queremos saber sobre o primeiro bit de t1, que indica se alguma tecla foi pressionada.
+			beq    t1, zero, CONTINUAR_MUSICA_VITORIA #se a tecla 1 n?o foi pressionada, volta a verificar at? que a mesma seja acionada
+			lb    t1, 4(t3) #ao ser pressionado, carrega 1 em t1 para fins de compara??o
+			li    t2, 0x031 #valor do 1 na tabela ASCII
+			beq    t1, t2, REINICIA_JOGO #se o que tiver sido registrado no teclado foi 1, reinicia o jogo
+			li    t2, 0x032 #valor do 2 na tabela ASCII
+			bne    t1, t2, CONTINUAR_MUSICA_VITORIA #Se o numero digitado n?o foi 2 nem 1, volta a esperar um input valido 
+			j    END #se o input tiver sido 2, encerra o programa 
+			CONTINUAR_MUSICA_VITORIA:
+
+
 			li a7,31        # define a chamada de syscall
 			ecall            # toca a nota
 			
