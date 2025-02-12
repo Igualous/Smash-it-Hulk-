@@ -16,10 +16,23 @@
 
 
 # lista de nota, duracao, nota2, duracao2, ..
-NOTAS:	#Refr�o(14 notas por linha = 28)
-	60,2500,60,500,60,750,67,250,65,2010,63,1000,62,1000,60,2500,60,500,60,750,67,250,69,1000,65,1000,67,2010,
-	72,2500,72,500,72,750,79,250,77,2010,75,1000,74,1000,72,2500,72,500,72,750,79,250,81,1000,77,1000,79,4000,
-
+NOTAS:	#68 notas
+	#Tema 2(11 notas por linha = 44)
+	60,2200,67,550,65,500,63,600,65,500,67,700,60,1700,67,550,65,500,63,700,62,700,
+	60,2200,67,550,65,500,63,600,65,500,67,700,60,1700,67,550,65,500,63,700,62,700,
+	72,2200,79,550,77,500,75,600,77,500,79,700,72,1700,79,550,77,500,75,700,74,700,
+	72,2200,79,550,77,500,75,600,77,500,79,700,72,1700,79,550,77,500,75,700,74,700,
+	#Ponte (8 notas por linha = 24)
+	63,300,60,300,60,300,63,300,63,300,60,300,60,300,63,300,
+	63,300,60,300,60,300,63,300,63,300,60,300,60,300,63,300,
+	46,300,48,800,48,300,50,800,58,300,60,800,60,300,62,800,
+NOTAS_FINAL:	#28 notas
+	72,2500,72,500,72,750,79,250,77,2010,75,1000,74,1000,72,2500,72,500,72,750,79,250,81,1000,77,1000,79,2010,
+	84,2500,84,500,84,750,91,250,89,2010,87,1000,86,1000,84,2500,84,500,84,750,91,250,93,1000,89,1000,91,4000,
+NOTAS_VITORIA:
+	84,50,88,50,91,50,96,850
+NOTAS_DERROTA:
+	61,2000,59,2000,63,2000,61,2000,59,500,61,500,63,500,66,500,64,500,71,500,64,500,62,1500,61,1500,69,400,68,500,66,400,65,500,66,400,68,500,63,500,66,1500,64,2500
 
 #inclusao das imagens
 
@@ -31,22 +44,55 @@ NOTAS:	#Refr�o(14 notas por linha = 28)
 .include "../DATA/hulk_pulando_e.data"
 .include "../DATA/hulk_pulando_cima.data"
 .include "../DATA/hulk_pulando_baixo.data"
+.include "../DATA/laser1.data"
+.include "../DATA/laser2.data"
 .include "../DATA/loki_ativo.data"
 .include "../DATA/loki_parado.data"
 .include "../DATA/loki_fundo.data"
-#.include "../DATA/doende.data"
 .include "../DATA/chitauri.data"
 .include "../DATA/projetil.data"
-.include "../DATA/portal.data"
+.include "../DATA/portal1.data"
+.include "../DATA/portal2.data"
 .include "../DATA/janela.data"
 .include "../DATA/janela_quebrada.data"
 .include "../DATA/porta.data"
 .include "../DATA/porta_quebrada.data"
 .include "../DATA/tela.data"
+.include "../DATA/tela_vit.data"
+.include "../DATA/tela_derrota.data"
+.include "../DATA/hulk_cabeca.data"
+.include "../DATA/hulk_morte.data"
+.include "../DATA/score.data"
+.include "../DATA/tempo.data"
+
+# NUMEROS DE SCORE
+.include "../DATA/um.data"
+.include "../DATA/dois.data"
+.include "../DATA/tres.data"
+.include "../DATA/quatro.data"
+.include "../DATA/cinco.data"
+.include "../DATA/seis.data"
+.include "../DATA/sete.data"
+.include "../DATA/oito.data"
+.include "../DATA/nove.data"
+.include "../DATA/dez.data"
+.include "../DATA/onze.data"
+.include "../DATA/doze.data"
+.include "../DATA/treze.data"
+.include "../DATA/quatorze.data"
+.include "../DATA/quinze.data"
+.include "../DATA/dezesseis.data"
+.include "../DATA/dezessete.data"
+.include "../DATA/dezoito.data"
+
+
+# HUD
+STR1: .string "SCORE\n"
+STR2: .string "TIME "
 
 #############  SETUP INICIAL
 # posicoes iniciais
-PASSOI: .word 0
+
 HULK_POS:            .word 85,200
 OLD_HULK_POS:    .word 85,200
 
@@ -54,8 +100,13 @@ LOKI_POS:	.word 130,18
 OLD_LOKI_POS:	.word 130,18
 LOKI_CONT: 	.word 0
 
+LASER_CONT: .word 0
+
+PROJETIL_POS: .word 120, 23
+PROJETIL_CONT: .word 0
+projetil_ativo_cont: .word 0
+
 CHITAURI_POS:	.word 280,140
-CHITAURI_POS_ANTIGA: .word 280,140
 CHITAURI_ATIVO: .word 0	# 0 - padrao; 1 - ativo
 CHITAURI_MOVE: .word 0 # verificador que fara com que o chitauri continue se movendo
 CHIT_CONT: .word 0
@@ -66,10 +117,11 @@ janelaY:	.word 70
 JANELAS_QUEBRADAS: .word 0,0,0,0,0,0,0,0,0 # 0 = inteira; 1 = quebrada
 contagem: .word 0
 pontos: .word 0
-vidas: .word 3
+vidas: .word 3	# vidas iniciais: 3
 fase: .word 0
 ##############
 .text
+INICIO: # endereco para reiniciar o jogo
 #### START
 # Carrega tela de menu
 la a4,fase			# define a4 como numero da fase
@@ -86,14 +138,14 @@ j LOOP5
 mainMenuSelect:
 MUSIC:
     
-    li s1,28        # le o numero de notas em s1
-    la s0,NOTAS        # define o endere�o das notas
+    li s1,68        # le o numero de notas em s1
+    la s0,NOTAS        # define o endere?o das notas
     li a2,48        # define o instrumento
     li a3,127        # define o volume
     li t0, 0
 
 LOOP_NOTAS:    
-	bge t0,s1, DONE_MUSIC        # contador chegou no final? ent�o  v� para FIM
+	bge t0,s1, DONE_MUSIC        # contador chegou no final? ent?o  v? para FIM
     lw a0,0(s0)        # le o valor da nota
     lw a1,4(s0)        # le a duracao da nota
 
@@ -105,11 +157,11 @@ LOOP_NOTAS:
     li a7,31        # define a chamada de syscall
     ecall            # toca a nota
     
-    mv a0,a1        # passa a dura��o da nota para a pausa
+    mv a0,a1        # passa a dura??o da nota para a pausa
     li a7,32        # define a chamada de syscal 
     ecall            # realiza uma pausa de a0 ms
     
-    addi s0,s0,8        # incrementa para o endere�o da pr�xima nota
+    addi s0,s0,8        # incrementa para o endere?o da pr?xima nota
     
     addi t0,t0,1        # incrementa o contador de notas
 	j LOOP_NOTAS
@@ -162,7 +214,7 @@ LOOP1: 	beq t1,t2,DONE		# Se for o ultimo endereco ent?o sai do loop
 	j LOOP1			# volta a verificar
 
 DONE:
-	lw t0,0(a0)
+	lw t0,0(a4)
 	beqz t0,PRINT_JANELAS		# se a fase for 0 (1), printa as janelas nos status da fase 1
 	la t1,JANELAS_QUEBRADAS
 	sw zero,0(t1)				# zera todas as janelas para a fase 2
@@ -174,8 +226,7 @@ DONE:
 	sw zero,24(t1)
 	sw zero,28(t1)
 	sw zero,32(t1)
-
-
+	j PRINT_PORTAIS
 	
 # Renderiza as janelas
 PRINT_JANELAS:
@@ -316,7 +367,7 @@ PRINT_JANELAS:
 	
 # Renderiza Loki no Bitmap
 PRINT_LOKI:
-        
+        addi s11,s11,1
        
 	la a0, loki_parado 
 	la t0, LOKI_POS
@@ -332,11 +383,19 @@ PRINT_HULK:
 	lw a2, 4(t0)  #carrega em t0 o numero que esta na segunda word(offset da word = 4) de HULK_POS(esse numero e a posicao y)
 	
 	jal renderImage
+
+# INICIALIZA O HUD
+    j PRINTA_SCORE
+    FIM_SCORE:
+    j PRINTA_TEMPO
+    FIM_TEMPO:
+	j PRINTA_VIDAS
 	
-	
-	
-        
-        
+	# contagem para a movimentacao do chitauri
+        la t0, CHIT_CONT
+        lw t1, 0(t0)
+        addi t1, t1, 1	#  CHIT_CONT += 1
+        sw t1, 0(t0)	# registra a contagem
 ###### GAME LOOP PRINCIPAL ######### 
 GAME_LOOP:  
 
@@ -346,17 +405,8 @@ GAME_LOOP:
 		#Esses dois registradores agirao como argumentos de comparacao para saber se 
 		#o hulk esta ou nao em alguma das bordas dos mapas. Vamos tentar achar uma solucao pra isso
 	#]
-            
-            
-	    # contagem para a movimentacao do chitauri
-        la t0, CHIT_CONT
-        lw t1, 0(t0)
-        addi t1, t1, 1	#  CHIT_CONT += 1
-        sw t1, 0(t0)	# registra a contagem
-	
-	    
-	
-	
+        
+        
        li s4, 85 #posicao X da borda esquerda, ou seja, se ele estiver na coluna 85, movimentos para a esquerda sao bloqueados
        li s5, 200 #posicao y da borda inferior, ou seja, se ele estiver na linha 200, movimentos para baixo sao bloqueados
        li s8, 185
@@ -366,24 +416,78 @@ GAME_LOOP:
 	# 2: verifica colisoes
 	
 	# 3: movimentacao inimigos
+	j MOV_LOKI
+	LOKI_CHECK:
 	
-	li t1,2 #comparacao para ver se o chitauri deve sumir
-	la t0,CHITAURI_MOVE # move o verificador para t0
-	lw t6,0(t0)  #coloca em t6 o verificador
-	beq t1,t6,CHIT_END #se ele ja percorreu toda a tela, finaliza as operacoes do chitauri por definitivo
-	
-	
-	li t1,1 #comparacao para ver se o chitauri ja foi printado na posicao inicial
-	la t0,CHITAURI_MOVE #move para t0 o verificador de movimentacao do Chitauri
-	lw t6,0(t0) #coloca em t6 o verificador
-	beq t1,t6,MOV_CHITAURI #se ele ja tiver aparecido na posicao inicial, comeca a movimentacao
-	
-	
-	jal CHITAURI #printara pela primeira vez o chitauri
-	
+	j PRINT_LASER
+	LASER_CHECK:
+      
+      
+      
+	j CHIT_CHECK #verifica se o chitauri ainda precisa ser movido
 	
 	
 	CHITAURI_PRINT:
+         # Funcaoo para restaurar o fundo na regiao ocupada pelo Chitauri
+# Argumentos:
+# a0: endereco do fundo
+# a1: posicao X do Chitauri
+# a2: posicao Y do Chitauri
+
+RESTAURA_FUNDO_CHITAURI:
+   la t0,CHITAURI_POS
+   lw a1,0(t0)
+   lw a2,4(t0)
+    # Carregar endereco do fundo
+    la t0, fundo1  # Endereco do fundo
+    li t1, 0xFF000000  # Endereco inicial da Memoria VGA - Frame 0
+
+    # Calcular o endereco inicial no fundo
+    li t2, 320  # Largura do fundo
+    mul t3, a2, t2  # Y * largura do fundo
+    add t3, t3, a1  # Y * largura + X
+    add t0, t0, t3  # Endereco inicial no fundo
+
+
+   
+    # Calcular o endereco inicial na VGA
+    mul t3, a2, t2  # Y * largura do fundo
+    add t3, t3, a1  # Y * largura + X
+    add t1, t1, t3  # Endereco inicial na VGA
+
+    # Loop para copiar a regiao do fundo para a VGA
+    li t4, 34  # Altura do Chitauri
+     li t5, 34  # Largura do Chitauri
+
+RESTAURA_LINHA:
+
+    beqz t4, FIM_RESTAURA  # Se terminou todas as linhas, encerrar
+
+    
+
+RESTAURA_COLUNA:
+
+    beqz t5, PROXIMA_LINHA  # Se terminou todas as colunas ir para a proxima linha
+
+    lb t3, 648(t0)  # Carrega o pixel do fundo(por conta da word de altura e largura, deve-se adiantar 8 pixels)
+    #o numero do tamanho da tela esta dobrado para evitar bugs do print
+    sb t3, 0(t1)  # Escreve o pixel na VGA
+
+    addi t0, t0, 1  # Proximo pixel no fundo
+    addi t1, t1, 1  # Proximo pixel na VGA
+    
+    addi t5, t5, -1  # Decrementa largura restante
+    
+    j RESTAURA_COLUNA
+
+PROXIMA_LINHA:
+    addi t4, t4, -1  # Decrementa altura restante
+    addi t0, t0, 286  # Avanca para a proxima linha no fundo (320 - 34)
+    addi t1, t1, 286  # Avanca para a proxima linha na VGA (320 - 34)
+    li t5, 34  # Reseta a largura
+    j RESTAURA_LINHA
+    
+FIM_RESTAURA:
 
 	la a0, chitauri #carrega o tamanho da imagem em a5
 	la t0, CHITAURI_POS  #carrega em t0 a word que contem as posicoes xy do chitauri
@@ -395,21 +499,23 @@ GAME_LOOP:
         li a0,1 #1 milesimo por pixel
         ecall
         
-        
-        
-        j CARREGA_FUNDO #recarrega o fundo e as janelas(provavelmente isso que ta bugando)
-     
-     
-	CHIT_END: #volta para as outras verificacoes do game loop
+        MOV_CHITAURI:
+  
+       la t0,CHITAURI_POS #posicao atual do chitauri
+       lw t1,0(t0)  #carrega em a1 a posicao do chitauri (argumento para print)
+       li t2,1   #verificara se ja chegou na ultima posicao do mapa
+       
+ beq t2,t1,CHITAURI_ERASE #se ele chegou no final, apaga
+ addi t1,t1,-1 # move uma coluna da animacao
+ sw t1,0(t0) #atualiza a posicao do chitauri
+ 
+	CHIT_END:
 	
 	
-	
-	j MOV_LOKI
-	LOKI_CHECK:
 	# 4: verifica vitoria ou derrota
 	jal VER_VITORIA
 	jal VER_DERROTA
-	
+
 	j GAME_LOOP
 ###### ################### #########	
 END:
@@ -480,9 +586,6 @@ renderImage:
 	
 	ret
 	
-	##essa funcao deve renderizar o chitauri separadamente para que ele e o hulk nao buguem na mesma posicao
-	
-	
 ### Apenas verifica se h? tecla pressionada (ideal para jogo dinamico)
 KEY:	li t1,0xFF200000		# carrega o endere?o de controle do KDMMIO
 	lw t0,0(t1)			# Le bit de Controle Teclado
@@ -506,6 +609,10 @@ KEY:	li t1,0xFF200000		# carrega o endere?o de controle do KDMMIO
 	
 	li t0, 'e'
 	beq t2, t0, QUEBRA_JAN
+
+	li t0, 'v'
+	beq, t2, t0, PERDE_PONTO
+
 FIM_KEY:	ret				# retorna
 
 # FUNCOES DE MOVIMENTACAO
@@ -516,15 +623,21 @@ FIM_KEY:	ret				# retorna
 #Os registradores a0,a1 e a2 sao os argumentos passados para a funcao print
 
 CHAR_CIMA:
-
-
- 
-    	la a0, hulk_parado #carrega as dimensoes do hulk em a0
+    la a0, hulk_parado #carrega as dimensoes do hulk em a0
 	la s6,HULK_POS #posicao atual
 	lw t2,0(s6) #passa a posicao antes do movimento para a antiga
 	lw a2, 4(s6)  #carrega em a2 a posicao y atual do personagem
 	addi a2, a2, -60 #move o hulk 
 	blt a2,s9,PARA #limite do mapa
+	lw t0,0(a4)	#verifica a fase
+	beqz t0,CIMA_FASE1	#se for a fase1 pula essa parte
+
+	#Impedindo o hulk de subir pelo obst�culo
+	lw t0,4(s6) #guarda em t0 o y atual do hulk
+	li t1,140 #guarda 140 em t1
+	beq t0,t1,PARA #se for 140, impede de subir
+
+	CIMA_FASE1:
 	jal renderImage #renderiza o sprite na nova posicao
 	sw a2, 4(s6) # atualiza a posicao y do personagem
 	j PRINT_JANELAS
@@ -535,16 +648,12 @@ CHAR_CIMA:
 	j GAME_LOOP
 	
 CHAR_ESQ:
-
- 
- 
- 
- 
 	la a0, hulk_parado #carrega as dimensoes do hulk em a0
 	la s6,HULK_POS
 	lw a1,0(s6)        #carrega em a1 a posicao x atual do personagem
-        addi a1, a1, -50   #move o hulk para esquerda
-        blt a1,s4,PARA2     #limite do mapa
+    addi a1, a1, -50   #move o hulk para esquerda
+    blt a1,s4,PARA2     #limite do mapa
+	ESQ_FASE1:
 	jal renderImage    #renderiza o sprite na nova posicao
 	sw a1, 0(s6)       # atualiza a posicao x do personagem
 	j PRINT_JANELAS
@@ -552,20 +661,36 @@ CHAR_ESQ:
 	#ret
 	PARA2:
 	addi a1,a1,50
-	j GAME_LOOP
+	lw t0,0(a4)	#verifica a fase
+	beqz t0,ESQ_FASE1	#se for a fase1 pula essa parte
+
+	#Verificando y do hulk para o portal
+	lw t0,4(s6)	#guarda em t0 o y atual do hulk
+	li t1,80 #y=80 requisito 1 para que o hulk entre no portal
+	bne t0,t1,ESQ_FASE1 #se n�o cumprir o requisito, � como se estivesse na fase 1
+
+	#Teleportando o hulk
+	addi a1,a1,100
+	li a2,200
+	sw a2, 4(s6)	   # atualiza a posicao y do personagem 
+
+	j ESQ_FASE1
 	
 CHAR_BAIXO:
-
-
- 
- 
-        la a0, hulk_parado #carrega as dimensoes do hulk em a0
-        la s6,HULK_POS
-       
-    
+    la a0, hulk_parado #carrega as dimensoes do hulk em a0
+    la s6,HULK_POS
 	lw a2, 4(s6)       #carrega em a2 a posicao y atual do personagem
 	addi a2, a2, 60   #move o hulk para baixo
 	bgt a2,s5,PARA3   #limite do mapa
+	lw t0,0(a4)	#verifica a fase
+	beqz t0,BAIXO_FASE1	#se for a fase1 pula essa parte
+
+	#Impedindo o hulk de descer pelo obst�culo
+	lw t0,4(s6) #guarda em t0 o y atual do hulk
+	li t1,80 #guarda 80 em t1
+	beq t0,t1,PARA3 #se for 80, impede de descer
+
+	BAIXO_FASE1:
 	jal renderImage    #renderiza o sprite na nova posicao
 	sw a2, 4(s6)       # atualiza a posicao y do personagem
 	j PRINT_JANELAS
@@ -574,25 +699,38 @@ CHAR_BAIXO:
 	PARA3:
 	addi a2,a2,-60
 	j GAME_LOOP
+
 CHAR_DIR:
-
-
- 
 	la a0, hulk_parado #carrega as dimensoes do hulk em a0
 	la s6,HULK_POS
-	
 	lw a1,0(s6)        #carrega em a1 a posicao x atual do personagem
-        addi a1, a1, 50    #move o hulk para direita
-        bgt a1,s8,PARA4     #limite do mapa
+    addi a1, a1, 50    #move o hulk para direita
+	bgt a1,s8,PARA4     #limite do mapa
+	DIR_FASE1:
 	jal renderImage    #renderiza o sprite na nova posicao
 	sw a1, 0(s6)       # atualiza a posicao x do personagem
+	
 	j PRINT_JANELAS
 	j GAME_LOOP
 	#ret
 	PARA4:
 	addi a1,a1,-50
-	j GAME_LOOP
+	lw t0,0(a4)	#verifica a fase
+	beqz t0,DIR_FASE1	#se for a fase1 pula essa parte
+
+	#Verificando y do hulk para o portal
+	lw t0,4(s6)	#guarda em t0 o y atual do hulk
+	li t1,200 #y=200 requisito 1 para que o hulk entre no portal
+	bne t0,t1,DIR_FASE1 #se n�o cumprir o requisito, � como se estivesse na fase 1
+
+	#Teleportando o hulk
+	addi a1,a1,-100
+	li a2,80
+	sw a2, 4(s6)	   # atualiza a posicao y do personagem 
 	
+	j DIR_FASE1
+	
+
 QUEBRA_JAN:
        
       
@@ -603,12 +741,12 @@ QUEBRA_JAN:
 	
 	jal renderImage
        li a7,32
-       li a0,1000
+       li a0,10
        ecall
        
        # efeito sonoro
 	    li a0, 40    # define a nota
-	    li a1,800        # define a dura��o da nota em ms
+	    li a1,800        # define a dura??o da nota em ms
 	    li a2,127        # define o instrumento
 	    li a3,127        # define o volume
 	    li a7,31        # define o syscall
@@ -765,31 +903,154 @@ QUEBRA_JAN:
 	ecall
 	
 	j PRINT_JANELAS
-	
-	
+		
+
 VER_VITORIA:
 	la s0, contagem
 	lw s2, 0(s0)	# s2 = contagem geral
 	
+	li t0, 18
+	beq s2, t0, ZEROU
 	li t0, 9
 	bne s2, t0, NAO_VENCEU # se contagem < 9, nao venceu
 	lw t1,0(a4)
 	bnez t1, NAO_VENCEU
+	jal MUSICA_VITORIA
 	j CARREGA_FASE2
 	
 	NAO_VENCEU:
 	ret
+
+# FUNCAO PARA TESTE DE DERROTA
+PERDE_PONTO:	
+	la t0, vidas
+	lw t1, 0(t0)
+	addi t1, t1, -1 	# diminui 1 ponto de vida arbitrariamente
+	sw t1, 0(t0)
+
+	# efeito sonoro
+	    li a0, 50    # define a nota
+	    li a1,800        # define a dura??o da nota em ms
+	    li a2,120        # define o instrumento
+	    li a3,127        # define o volume
+	    li a7,31        # define o syscall
+	    ecall            # toca a nota
+
+		j PRINTA_VIDAS
 VER_DERROTA:
-	#la a0, DERROTA		# tela GAMEOVER
-	#li a1, 0
-	#li a2, 0
-	#jal renderImage 	
-	# j END
+	la t0, vidas
+	lw t1, 0(t0)
+	bnez t1, PULA_DER
+	la a0, tela_derrota		# tela GAMEOVER
+	li a1, 0
+	li a2, 0
+	jal renderImage 
+
+	# Codigo abaixo obtem a entrada
+	TELA_FIM:
+		MUSIC_DERROTA:
+			li s1,22        # le o numero de notas em s1
+			la s0,NOTAS_DERROTA        # define o endere?o das notas
+			li a2,26        # define o instrumento
+			li a3,127        # define o volume
+			li t0, 0
+
+		LOOP_NOTAS_DERROTA:    
+			bge t0,s1, DONE_MUSIC_DERROTA        # contador chegou no final? ent?o  v? para FIM
+			lw a0,0(s0)        # le o valor da nota
+			lw a1,4(s0)        # le a duracao da nota
+
+			li    t3, 0xFF200000 # carrega em t3 o endere?o do status do teclado.
+			lb     t1, 0(t3) # carrega o status do teclado em t1.
+
+			andi    t1, t1, 1 # isso eh um processo de mascaramento. Apenas queremos saber sobre o primeiro bit de t1, que indica se alguma tecla foi pressionada.
+
+			beq    t1, zero, CONTINUAR_MUSICA_DERROTA #se a tecla 1 n?o foi pressionada, volta a verificar at? que a mesma seja acionada
+
+			lb    t1, 4(t3) #ao ser pressionado, carrega 1 em t1 para fins de compara??o
+
+			li    t2, 0x031 #valor do 1 na tabela ASCII
+			beq    t1, t2, REINICIA_JOGO #se o que tiver sido registrado no teclado foi 1, reinicia o jogo
+
+        	li    t2, 0x032 #valor do 2 na tabela ASCII
+        	bne    t1, t2, loop_fim #Se o numero digitado n?o foi 2 nem 1, volta a esperar um input valido 
+        	j    END #se o input tiver sido 2, encerra o programa 
+			loop_fim:
+			CONTINUAR_MUSICA_DERROTA:
+			li a7,31        # define a chamada de syscall
+			ecall            # toca a nota
+			
+			mv a0,a1        # passa a dura??o da nota para a pausa
+			li a7,32        # define a chamada de syscal 
+			ecall            # realiza uma pausa de a0 ms
+			
+			addi s0,s0,8        # incrementa para o endere?o da pr?xima nota
+			
+			addi t0,t0,1        # incrementa o contador de notas
+			j LOOP_NOTAS_DERROTA
+			DONE_MUSIC_DERROTA:
+			j TELA_FIM
+
+	PULA_DER:
 	ret
+
+REINICIA_JOGO:	# volta tudo para as posicoes iniciais
+	la t0, HULK_POS
+	li t1, 85
+	li t2, 200
+	sw t1, 0(t0)
+	sw t2, 4(t0)
+
+	la t0, LOKI_POS
+	li t1, 130
+	li t2, 18
+	sw t1, 0(t0)
+	sw t2, 4(t0)
+
+	la t0, LOKI_CONT
+	sw zero, 0(t0)
+
+	la t0, LASER_CONT
+	sw zero, 0(t0)
+
+	la t0, CHITAURI_POS
+	li t1, 280
+	li t2, 140
+	sw t1, 0(t0)
+	sw t2, 4(t0)
+
+	la t0, CHITAURI_ATIVO
+	sw zero, 0(t0)
+
+	la t0, JANELAS_QUEBRADAS
+	sw zero, 0(t0)
+	sw zero, 4(t0)
+	sw zero, 8(t0)
+	sw zero, 12(t0)
+	sw zero, 16(t0)
+	sw zero, 20(t0)
+	sw zero, 24(t0)
+	sw zero, 28(t0)
+	sw zero, 32(t0)
+
+	la t0, contagem
+	sw zero, 0(t0)
+
+	la t0, pontos
+	sw zero, 0(t0)
+
+	la t0, vidas
+	li t1, 3
+	sw t1, 0(t0)
+
+	la t0, fase
+	sw zero, 0(t0)
+
+	j INICIO
 
 MOV_LOKI:
         
-        # contagem
+       # contagem
         la t0, LOKI_CONT #carrega em t0 o endereco da contagem atual do loki
         lw t1, 0(t0) #carrega em t1 a contagem atual do loki
         addi t1, t1, 1	# LOKI_CONT += 1
@@ -805,6 +1066,8 @@ MOV_LOKI:
 	lw a2, 4(t0) #argumento para print com a posicao Y do Loki
 	jal renderImage  #renderiza a imagem
 	
+	
+	
 	# gera numero aleatorio entre 85 e 185
 	li a7, 42  #ecall para gerar numero aleatorio
 	li a1, 100 #garante que nao saia dos limites do mapa
@@ -814,6 +1077,26 @@ MOV_LOKI:
 	# registra a posicao
 	la t0, LOKI_POS #carrega em t0 a posicao desatualizada
 	sw t1, 0(t0)  #atualiza a posicao
+	
+	#faz animação do Loki para ele atirar
+	la t0, LOKI_POS #carrega em t0 as coordenadas do loki
+	la a0, loki_ativo #argumento para print que indica com qual cor o sprite deve ser apagado
+	lw a1, 0(t0) #argumento para print com a posicao X do Loki
+	lw a2, 4(t0) #argumento para print com a posicao Y do Loki
+	jal renderImage  #renderiza a imagem
+	
+	
+	
+	
+	li a7,32
+	li a0,500
+	ecall
+	#apaga ele atirando
+	la t0, LOKI_POS #carrega em t0 as coordenadas do loki
+	la a0, loki_fundo #argumento para print que indica com qual cor o sprite deve ser apagado
+	lw a1, 0(t0) #argumento para print com a posicao X do Loki
+	lw a2, 4(t0) #argumento para print com a posicao Y do Loki
+	jal renderImage  #renderiza a imagem
 	
         # renderiza o loki na nova posicao
 	la a0, loki_parado #argumento para print do sprite a ser renderizado
@@ -833,6 +1116,18 @@ MOV_LOKI:
 	lw a2, 4(t0)
 
 	DONE_MOV:	j LOKI_CHECK
+#funcao que verifica se o chitauri ja apareceu	
+CHIT_CHECK:
+        li t1,2 #comparacao para ver se o chitauri deve sumir
+	la t0,CHITAURI_MOVE # move o verificador para t0
+	lw t6,0(t0)  #coloca em t6 o verificador
+	beq t1,t6,CHIT_END #se ele ja percorreu toda a tela, finaliza as operacoes do chitauri por definitivo
+	
+	
+	li t1,1 #comparacao para ver se o chitauri ja foi printado na posicao inicial
+	la t0,CHITAURI_MOVE #move para t0 o verificador de movimentacao do Chitauri
+	lw t6,0(t0) #coloca em t6 o verificador
+	beq t1,t6,CHITAURI_PRINT #se ele ja tiver aparecido na posicao inicial, comeca a movimentacao
 
 CHITAURI:
 	la t0, contagem  #carrega em t0 a quantidade de janelas quebradas
@@ -855,7 +1150,7 @@ CHITAURI:
 	la t0, CHITAURI_ATIVO #carrega em t0 a posicao inicial do chitauri
 	lw t1, 0(t0)    #carrega em t1 se ele esta ativo
 	li t2, 1          #sera usado para verificar se ele ja apareceu na tela
-	beq t1, t2, MOV_CHITAURI	# se o estado for ativo, pula
+	beq t1, t2, CHITAURI_PRINT	# se o estado for ativo, pula
 		# muda o estado para ativo
 		li t2, 1 # muda o estado para ativo
 		la t0, CHITAURI_ATIVO #carrega em t0 a posicao do chitauri
@@ -873,18 +1168,7 @@ CHITAURI:
                 li t6,1 # valor a ser colocado no verificador
                 sw t6,0(t0) # coloca o valor no verificador
 		j CHIT_END #finaliza a aparicao do Chitauri 
-	
-MOV_CHITAURI:
-  
-       la t0,CHITAURI_POS #posicao atual do chitauri
-       lw t1,0(t0)  #carrega em a1 a posicao do chitauri (argumento para print)
-       li t2,1   #verificara se ja chegou na ultima posicao do mapa
-       
- beq t2,t1,CHITAURI_ERASE #se ele chegou no final, apaga
- addi t1,t1,-1 # move uma coluna da animacao
- sw t1,0(t0) #atualiza a posicao do chitauri
-
-	j CHITAURI_PRINT #retorna ao game_loop para que a imagem seja printada la. Caso o print seja aqui, o programa congela na anima
+		
 	
 CHITAURI_ERASE: #se o chitauri chegou na ultima posicao,para de aparecer
 
@@ -893,6 +1177,53 @@ li t2,2
 sw t2,0(t0) #agora o verificador tem valor 2, ou seja, o chitauri deve sumir, pois ja se moveu completamente
 j CHIT_END
 	
+PROJETIL:
+	la t0, PROJETIL_CONT
+	lw t1, 0(t0)	# t1 = contagem atual
+	
+	li t0, 30000000
+	blt, t1, t0, FIM_PROJ	# se contagem < t0, faz nada
+	
+	# zera a contagem
+	la t0, PROJETIL_CONT
+	sw zero, 0(t0)
+	
+	# define a posicao x do projetil
+	la t1, LOKI_POS
+	lw t2, 0(t1) 	# t2 = coordenada 'x' atual do loki
+	lw t3, 4(t1)	# t3 = coordenada 'y' do loki
+	
+	la t0, PROJETIL_POS
+	sw t2, 0(t0)	# registra a coordenada 'y' fixa
+	
+	# incrementa 1 a coordenada y
+	la t0, PROJETIL_POS
+	lw t1, 4(t0)
+	addi t1, t1, 2	# desce a posicao y do sprite de 2 em 2 pixels
+	sw t1, 4(t0)
+	li s0, 200
+	bgt t1, s0, FIM_PROJ
+	
+	# renderiza o fundo
+	#jal renderFundo
+	
+	# renderiza o projetil
+	la t0, PROJETIL_POS
+	lw a1, 0(t0)
+	lw a2, 4(t0)
+	la a0, projetil
+	jal renderImage
+	
+	
+	
+	
+	
+	FIM_PROJ:
+	addi t1, t1, 1	# incrementa 1 na contagem
+	sw t1, 0(t0)	# registra a contagem
+	ret
+	
+
 CARREGA_FASE2:
 	li t0,1
 	sw t0,0(a4)			# alterando numero da fase para 1(fase 2)
@@ -902,3 +1233,352 @@ CARREGA_FASE2:
 	li t2,200
 	sw t2,4(s6)			# redefine o y do hulk
 	j CARREGA_FUNDO
+
+
+MUSICA_VITORIA:
+	li s1,4        # le o numero de notas em s1
+	la s0,NOTAS_VITORIA        # define o endere?o das notas
+	li a2,0        # define o instrumento
+	li a3,127        # define o volume
+	li t0, 0
+
+	LOOP_NOTAS_VITORIA:    
+		beq t0,s1, DONE_MUSIC_VITORIA        # contador chegou no final? ent?o  v? para FIM
+		lw a0,0(s0)        # le o valor da nota
+		lw a1,4(s0)        # le a duracao da nota
+		
+		li a7,31        # define a chamada de syscall
+		ecall            # toca a nota
+		
+		mv a0,a1        # passa a dura??o da nota para a pausa
+		li a7,32        # define a chamada de syscal 
+		ecall            # realiza uma pausa de a0 ms
+		
+		addi s0,s0,8        # incrementa para o endere?o da pr?xima nota
+		
+		addi t0,t0,1        # incrementa o contador de notas
+		j LOOP_NOTAS_VITORIA
+	DONE_MUSIC_VITORIA:
+	ret
+
+PRINT_PORTAIS:
+	la a0,portal1		# printa portal1 e define posi��es x=217, y=180 
+	li a1, 217
+	li a2, 180
+	jal renderImage
+	la a0,portal2		# printa portal2 e define posi��es x=60, y=60 
+	li a1, 60
+	li a2, 60
+	jal renderImage
+	la a0,chitauri
+	li a1, 243
+	li a2, 95
+	jal renderImage
+	j PRINT_JANELAS
+
+PRINT_LASER:
+	lw t0,0(a4)
+	beqz t0,FIM_LASER
+	la t4,LASER_CONT
+	lw t1,0(t4)
+    li t2, 800000
+	li t3, 400000
+
+	beq t1,t3,LASER1
+	beq t1,t2,LASER2
+	addi t1,t1,1
+	sw t1,0(t4)
+	j FIM_LASER
+
+	LASER1:
+		la a0,laser1
+		li a1, 0
+		li a2, 112
+		jal renderImage
+		li t1, 400001
+		sw t1,0(t4)
+		j FIM_LASER
+
+	LASER2:
+		la a0,laser2
+		li a1, 0
+		li a2, 112
+		jal renderImage
+		li t1,0
+		sw t1,0(t4)
+
+	FIM_LASER:
+		# garante que nao vai bugar
+		la t5, HULK_POS
+		lw a1, 0(t5)
+		lw a2, 4(t5)
+		j LASER_CHECK
+
+	
+ZEROU:
+	jal MUSICA_VITORIA
+	CARREGA_FINAL:               # carrega a imagem no frame 0
+		li t1,0xFF000000	# endereco inicial da Memoria VGA - Frame 0
+		li t2,0xFF012C00	# endereco final 
+		la t4,tela_vit
+		j CONTINUAR_FUNDO_FINAL
+		CONTINUAR_FUNDO_FINAL: addi t4,t4,8		# primeiro pixels depois das informa??es de nlin ncol
+	LOOP2: 	beq t1,t2,DONE_FINAL		# Se for o ultimo endereco ent?o sai do loop
+		lw t3,0(t4)		# le um conjunto de 4 pixels : word
+		sw t3,0(t1)		# escreve a word na mem?ria VGA
+		addi t1,t1,4		# soma 4 ao endereco
+		addi t4,t4,4
+		j LOOP2			# volta a verificar
+	DONE_FINAL:
+		MUSIC_FINAL:
+		
+			li s1,28        # le o numero de notas em s1
+			la s0,NOTAS_FINAL        # define o endere?o das notas
+			li a2,0        # define o instrumento
+			li a3,127        # define o volume
+			li t0, 0
+			
+		LOOP_NOTAS_FINAL:    
+			bge t0,s1, DONE_MUSIC_FINAL        # contador chegou no final? ent?o  v? para FIM
+			lw a0,0(s0)        # le o valor da nota
+			lw a1,4(s0)        # le a duracao da nota
+			
+			li    t3, 0xFF200000 # carrega em t3 o endere?o do status do teclado.
+			lb     t1, 0(t3) # carrega o status do teclado em t1.
+			andi    t1, t1, 1 # isso eh um processo de mascaramento. Apenas queremos saber sobre o primeiro bit de t1, que indica se alguma tecla foi pressionada.
+			beq    t1, zero, CONTINUAR_MUSICA_VITORIA #se a tecla 1 n?o foi pressionada, volta a verificar at? que a mesma seja acionada
+			lb    t1, 4(t3) #ao ser pressionado, carrega 1 em t1 para fins de compara??o
+			li    t2, 0x031 #valor do 1 na tabela ASCII
+			beq    t1, t2, REINICIA_JOGO #se o que tiver sido registrado no teclado foi 1, reinicia o jogo
+			li    t2, 0x032 #valor do 2 na tabela ASCII
+			bne    t1, t2, CONTINUAR_MUSICA_VITORIA #Se o numero digitado n?o foi 2 nem 1, volta a esperar um input valido 
+			j    END #se o input tiver sido 2, encerra o programa 
+			CONTINUAR_MUSICA_VITORIA:
+
+
+			li a7,31        # define a chamada de syscall
+			ecall            # toca a nota
+			
+			mv a0,a1        # passa a dura??o da nota para a pausa
+			li a7,32        # define a chamada de syscal 
+			ecall            # realiza uma pausa de a0 ms
+			
+			addi s0,s0,8        # incrementa para o endere?o da pr?xima nota
+			
+			addi t0,t0,1        # incrementa o contador de notas
+			j LOOP_NOTAS_FINAL
+		DONE_MUSIC_FINAL:
+			li a7,10
+			ecall 				# ecall para o exit
+
+PRINTA_VIDAS:
+	la t0, vidas
+	lw t2, 0(t0)	# t2 = vidas
+
+	li t0, 3
+	bne t2, t0, PROX_VIDAS	# se vidas < 3, PROX_VIDAS
+		la a0, hulk_cabeca
+		li a1, 290
+		li a2, 18
+		jal renderImage
+
+		li a1, 260
+		jal renderImage
+
+		li a1, 230
+		jal renderImage
+
+		j PULA_HUD
+	PROX_VIDAS:
+
+	li t0, 2
+	bne t2, t0, PROX_VIDAS2	# se vidas < 2, PROX_VIDAS2
+		la a0, hulk_morte
+		li a1, 290
+		li a2, 18
+		jal renderImage
+
+		la a0, hulk_cabeca
+		li a1, 260
+		jal renderImage
+
+		li a1, 230
+		jal renderImage
+	
+		j PULA_HUD
+	PROX_VIDAS2:
+	li t0, 1
+	bne t2, t0, PULA_HUD
+	la a0, hulk_morte
+		li a1, 290
+		li a2, 18
+		jal renderImage
+
+		li a1, 260
+		jal renderImage
+
+		la a0, hulk_cabeca
+		li a1, 230
+		jal renderImage
+
+
+	PULA_HUD:
+	# garante que nao vai bugar
+
+	la t0, LOKI_POS
+	lw a1, 0(t0)
+	lw a2, 0(t0)
+	
+	j GAME_LOOP
+	
+PRINTA_TEMPO:
+    la a0, tempo
+    li a1, 0
+    li a2, 15
+    jal renderImage
+
+    j FIM_TEMPO
+
+PRINTA_SCORE:
+    la a0, score
+    li a1, 1
+    li a2, 35
+    jal renderImage
+
+	# calcula os pontos
+	la t0, contagem
+	lw t1, 0(t0)	# t1 = contagem (0 - 9)
+
+	la t0, pontos
+	lw t2, 0(t0)	# t2 = pontos
+
+	mv t2, t1	# pontos = contagem
+
+	li t0, 0
+	bne t2, t0, pula_pontos0
+		j FIM_SCORE
+	pula_pontos0:
+	li t0, 1
+	bne t2, t0, pula_pontos1
+		la a0, um
+		j fim_calc
+	pula_pontos1:
+	li t0, 1
+	bne t2, t0, pula_pontos1z
+		la a0, um
+		j fim_calc
+	pula_pontos1z:
+
+	li t0, 2
+	bne t2, t0, pula_pontos2
+		la a0, dois
+		j fim_calc
+	pula_pontos2:
+
+	li t0, 3
+	bne t2, t0, pula_pontos3
+		la a0, tres
+		j fim_calc
+	pula_pontos3:
+
+	li t0, 4
+	bne t2, t0, pula_pontos4
+		la a0, quatro
+		j fim_calc
+	pula_pontos4:
+
+	li t0, 5
+	bne t2, t0, pula_pontos5
+		la a0, cinco
+		j fim_calc
+	pula_pontos5:
+
+	li t0, 6
+	bne t2, t0, pula_pontos6
+		la a0, seis
+		j fim_calc
+	pula_pontos6:
+
+	li t0, 7
+	bne t2, t0, pula_pontos7
+		la a0, sete
+		j fim_calc
+	pula_pontos7:
+
+	li t0, 8
+	bne t2, t0, pula_pontos8
+		la a0, oito
+		j fim_calc
+	pula_pontos8:
+
+	li t0, 9
+	bne t2, t0, pula_pontos9
+		la a0, nove
+		j fim_calc
+	pula_pontos9:
+
+	li t0, 10
+	bne t2, t0, pula_pontos10
+		la a0, dez
+		j fim_calc
+	pula_pontos10:
+
+	li t0, 11
+	bne t2, t0, pula_pontos11
+		la a0, onze
+		j fim_calc
+	pula_pontos11:
+
+	li t0, 12
+	bne t2, t0, pula_pontos12
+		la a0, doze
+		j fim_calc
+	pula_pontos12:
+
+	li t0, 13
+	bne t2, t0, pula_pontos13
+		la a0, treze
+		j fim_calc
+	pula_pontos13:
+
+	li t0, 14
+	bne t2, t0, pula_pontos14
+		la a0, quatorze
+		j fim_calc
+	pula_pontos14:
+
+	li t0, 15
+	bne t2, t0, pula_pontos15
+		la a0, quinze
+		j fim_calc
+	pula_pontos15:
+
+	li t0, 16
+	bne t2, t0, pula_pontos16
+		la a0, dezesseis
+		j fim_calc
+	pula_pontos16:
+
+	li t0, 17
+	bne t2, t0, pula_pontos17
+		la a0, dezessete
+		j fim_calc
+	pula_pontos17:
+
+	li t0, 18
+	bne t2, t0, pula_pontos18
+		la a0, dezoito
+		j fim_calc
+	pula_pontos18:
+
+
+	fim_calc:
+	
+	# PRINTA O SCORE ATUAL
+	li a1, 47
+	li a2, 40
+	jal renderImage
+
+    j FIM_SCORE
+    
+  
