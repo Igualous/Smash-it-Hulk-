@@ -40,10 +40,6 @@ NOTAS_DERROTA:
 .include "../DATA/fundo2.data"
 .include "../DATA/hulk_ativo.data"
 .include "../DATA/hulk_parado.data"
-.include "../DATA/hulk_pulando_d.data"
-.include "../DATA/hulk_pulando_e.data"
-.include "../DATA/hulk_pulando_cima.data"
-.include "../DATA/hulk_pulando_baixo.data"
 .include "../DATA/laser1.data"
 .include "../DATA/laser2.data"
 .include "../DATA/loki_ativo.data"
@@ -63,7 +59,12 @@ NOTAS_DERROTA:
 .include "../DATA/hulk_cabeca.data"
 .include "../DATA/hulk_morte.data"
 .include "../DATA/score.data"
-.include "../DATA/tempo.data"
+.include "../DATA/tabela_hud.data"
+.include "../DATA/taco.data"
+.include "../DATA/hulk_ver_parado.data"
+.include "../DATA/hulk_ver_ativo.data"
+.include "../DATA/capitao_hulk.data"
+.include "../DATA/capitao_smash.data"
 
 # NUMEROS DE SCORE
 .include "../DATA/um.data"
@@ -85,10 +86,6 @@ NOTAS_DERROTA:
 .include "../DATA/dezessete.data"
 .include "../DATA/dezoito.data"
 
-
-# HUD
-STR1: .string "SCORE\n"
-STR2: .string "TIME "
 
 #############  SETUP INICIAL
 # posicoes iniciais
@@ -117,6 +114,10 @@ contagem: .word 0
 pontos: .word 0
 vidas: .word 3	# vidas iniciais: 3
 fase: .word 0
+
+invencivel:		 .word 0	# padrao = 0; invencivel = 1
+invencivel_cont: .word 0	# 0 a 30000000
+tacos:			 .word 0	# max: 1
 ##############
 .text
 INICIO: # endereco para reiniciar o jogo
@@ -194,8 +195,29 @@ DONE_MUSIC:
         
         
 # Carrega a fase 1 em ambos os frames
+CARREGA_FUNDO:
+	la t0, fase
+	lw t1, 0(t0)
+	bnez t1, PULA_CAP
+	la a0, capitao_hulk
+	li a1, 0
+	li a2, 0
+	jal renderImage
 
-CARREGA_FUNDO:               # carrega a imagem no frame 0
+	li a7, 32
+	li a0, 2000
+	ecall
+
+	la a0, capitao_smash
+	li a1, 0
+	li a2, 0
+	jal renderImage
+
+	li a7, 32
+	li a0, 2000
+	ecall
+	PULA_CAP:
+
 	li t1,0xFF000000	# endereco inicial da Memoria VGA - Frame 0
 	li t2,0xFF012C00	# endereco final 
 	lw t0,0(a4)			
@@ -375,7 +397,7 @@ PRINT_LOKI:
 	jal renderImage
 # Renderiza Hulk no Bitmap
 PRINT_HULK:
-	la a0, hulk_parado #carrega o tamanho da imagem em a0
+	jal SET_SPRITE_HULK #carrega o tamanho da imagem em a0
 	la t0, HULK_POS  #carrega em t0 a word que contem as posicoes xy do hulk
 	lw a1, 0(t0)  #carrega em t0 o numero que esta na primeira word de HULK_POS(esse numero e a posicao x)
 	lw a2, 4(t0)  #carrega em t0 o numero que esta na segunda word(offset da word = 4) de HULK_POS(esse numero e a posicao y)
@@ -385,8 +407,6 @@ PRINT_HULK:
 # INICIALIZA O HUD
     j PRINTA_SCORE
     FIM_SCORE:
-    j PRINTA_TEMPO
-    FIM_TEMPO:
 	j PRINTA_VIDAS
 ###### GAME LOOP PRINCIPAL ######### 
 GAME_LOOP:  
@@ -406,6 +426,9 @@ GAME_LOOP:
 	# 1: acoes do player
 	jal KEY
 	# 2: verifica colisoes
+	j VER_INVENCIVEL
+	INV_CHECK:
+
 	
 	# 3: movimentacao inimigos
 	j MOV_LOKI
@@ -517,6 +540,9 @@ KEY:	li t1,0xFF200000		# carrega o endere?o de controle do KDMMIO
 	li t0, 'v'
 	beq, t2, t0, PERDE_PONTO
 
+	li t0, 'i'
+	beq, t2, t0, SET_INVENCIVEL
+
 FIM_KEY:	ret				# retorna
 
 # FUNCOES DE MOVIMENTACAO
@@ -527,7 +553,7 @@ FIM_KEY:	ret				# retorna
 #Os registradores a0,a1 e a2 sao os argumentos passados para a funcao print
 
 CHAR_CIMA:
-    la a0, hulk_parado #carrega as dimensoes do hulk em a0
+    jal SET_SPRITE_HULK #carrega as dimensoes do hulk em a0
 	la s6,HULK_POS #posicao atual
 	lw t2,0(s6) #passa a posicao antes do movimento para a antiga
 	lw a2, 4(s6)  #carrega em a2 a posicao y atual do personagem
@@ -552,7 +578,7 @@ CHAR_CIMA:
 	j GAME_LOOP
 	
 CHAR_ESQ:
-	la a0, hulk_parado #carrega as dimensoes do hulk em a0
+	jal SET_SPRITE_HULK #carrega as dimensoes do hulk em a0
 	la s6,HULK_POS
 	lw a1,0(s6)        #carrega em a1 a posicao x atual do personagem
     addi a1, a1, -50   #move o hulk para esquerda
@@ -581,7 +607,7 @@ CHAR_ESQ:
 	j ESQ_FASE1
 	
 CHAR_BAIXO:
-    la a0, hulk_parado #carrega as dimensoes do hulk em a0
+    jal SET_SPRITE_HULK #carrega as dimensoes do hulk em a0
     la s6,HULK_POS
 	lw a2, 4(s6)       #carrega em a2 a posicao y atual do personagem
 	addi a2, a2, 60   #move o hulk para baixo
@@ -605,7 +631,7 @@ CHAR_BAIXO:
 	j GAME_LOOP
 
 CHAR_DIR:
-	la a0, hulk_parado #carrega as dimensoes do hulk em a0
+	jal SET_SPRITE_HULK #carrega as dimensoes do hulk em a0
 	la s6,HULK_POS
 	lw a1,0(s6)        #carrega em a1 a posicao x atual do personagem
     addi a1, a1, 50    #move o hulk para direita
@@ -638,7 +664,7 @@ CHAR_DIR:
 QUEBRA_JAN:
        
       
-	la a0, hulk_ativo #carrega o tamanho da imagem em a0
+	jal SET_HULK_ATIVO #carrega o tamanho da imagem em a0
 	la t0, HULK_POS  #carrega em t0 a word que contem as posicoes xy do hulk
 	lw a1, 0(t0)  #carrega em t0 o numero que esta na primeira word de HULK_POS(esse numero e a posicao x)
 	lw a2, 4(t0)  #carrega em t0 o numero que esta na segunda word(offset da word = 4) de HULK_POS(esse numero e a posicao y)
@@ -1242,10 +1268,10 @@ PRINTA_VIDAS:
 		li a2, 18
 		jal renderImage
 
-		li a1, 260
+		li a1, 265
 		jal renderImage
 
-		li a1, 230
+		li a1, 240
 		jal renderImage
 
 		j PULA_HUD
@@ -1259,10 +1285,10 @@ PRINTA_VIDAS:
 		jal renderImage
 
 		la a0, hulk_cabeca
-		li a1, 260
+		li a1, 265
 		jal renderImage
 
-		li a1, 230
+		li a1, 240
 		jal renderImage
 	
 		j PULA_HUD
@@ -1274,11 +1300,11 @@ PRINTA_VIDAS:
 		li a2, 18
 		jal renderImage
 
-		li a1, 260
+		li a1, 265
 		jal renderImage
 
 		la a0, hulk_cabeca
-		li a1, 230
+		li a1, 240
 		jal renderImage
 
 
@@ -1291,19 +1317,19 @@ PRINTA_VIDAS:
 	
 	j GAME_LOOP
 	
-PRINTA_TEMPO:
-    la a0, tempo
-    li a1, 0
-    li a2, 15
-    jal renderImage
-
-    j FIM_TEMPO
 
 PRINTA_SCORE:
-    la a0, score
+
+
+    la a0, tabela_hud
     li a1, 1
-    li a2, 35
+    li a2, 1
     jal renderImage
+
+	la a0, taco
+	li a1, 3
+	li a2, 24
+	jal renderImage
 
 	# calcula os pontos
 	la t0, contagem
@@ -1318,11 +1344,7 @@ PRINTA_SCORE:
 	bne t2, t0, pula_pontos0
 		j FIM_SCORE
 	pula_pontos0:
-	li t0, 1
-	bne t2, t0, pula_pontos1
-		la a0, um
-		j fim_calc
-	pula_pontos1:
+	
 	li t0, 1
 	bne t2, t0, pula_pontos1
 		la a0, um
@@ -1435,8 +1457,120 @@ PRINTA_SCORE:
 	fim_calc:
 	
 	# PRINTA O SCORE ATUAL
-	li a1, 47
-	li a2, 40
+	li a1, 49
+	li a2, 5
 	jal renderImage
 
+	# verifica n de tacos
+	la t0, contagem
+	lw t1, 0(t0)	# pontos
+	li t2, 10
+	bne t1, t2, PULA_TACO
+
+		# seta tacos para 1
+		la t0, tacos
+		lw t1, 0(t0)	# t1 = tacos
+		li t1, 1		# t1 = 1
+		sw t1, 0(t0)	# tacos = 1
+		
+	PULA_TACO:
+
+	# PRINTA TACOS
+	la t0, tacos
+	lw t1, 0(t0)	# t1 = tacos
+	li t2, 1
+	bne t2, t1,  PULA_TACOS1
+		la a0, um
+		li a1, 34
+		li a2, 26 
+		jal renderImage
+
+	PULA_TACOS1:
+
+
     j FIM_SCORE
+
+SET_INVENCIVEL:	# altera o estado de invencivel para 1 quando aperta 1
+	# verfica se tem tacos
+	la t0, tacos
+	lw t1, 0(t0)	# t1 = tacos
+	beqz t1, FIM_INV
+
+	la t0, invencivel
+	li t1, 1
+	sw t1, 0(t0)
+
+	# atualiza o sprite do hulk
+	jal SET_SPRITE_HULK
+	la t0, HULK_POS
+	lw a1, 0(t0)
+	lw a2, 4(t0)
+	jal renderImage
+
+	# zera os tacos
+	la t0, tacos
+	sw zero, 0(t0)
+
+	# renderiza o score com tacos zerado
+	j PRINTA_SCORE
+
+
+VER_INVENCIVEL:	# a ser adicionado no game_loop
+	la t0, invencivel
+	lw t3, 0(t0)	# t3 = invencivel (0 ou 1)
+	li t0, 1
+	bne t0, t3, FIM_INV # se nao estiver invencivel, pula
+
+	# contagem
+	la t0, invencivel_cont
+	lw t1, 0(t0)	# t1 = contagem
+	addi t1, t1, 1  # t1++
+	sw t1, 0(t0)	# contagem = t1
+
+	li t0, 15000000
+	beq t0, t1, inv_volta
+		j FIM_INV
+	inv_volta:
+		# zera a contagem
+		la t0, invencivel_cont
+		sw zero, 0(t0)
+
+		# altera o estado para normal
+		la t0, invencivel
+		sw zero, 0(t0)	# invencivel = 0 (volta ao normal)
+
+		la t0, HULK_POS
+		lw a1, 0(t0)
+		lw a2, 4(t0)
+		la a0, hulk_parado
+		jal renderImage
+
+		j PRINTA_SCORE
+
+		FIM_INV:
+		j INV_CHECK
+
+SET_SPRITE_HULK:
+	# seta o sprite do hulk caso invencivel
+	la t0, invencivel
+	lw t1, 0(t0)
+	bnez t1, printa_vermelho
+		la a0, hulk_parado
+		j check_invencivel
+	printa_vermelho:
+		la a0, hulk_ver_parado
+          check_invencivel:
+	ret
+
+SET_HULK_ATIVO:
+	# seta o sprite do hulk ativo caso invencivel
+	la t0, invencivel
+	lw t1, 0(t0)
+	bnez t1, printa_vermelho1
+		la a0, hulk_ativo
+		j check_invencivel1
+	printa_vermelho1:
+		la a0, hulk_ver_ativo
+          check_invencivel1:
+
+ret
