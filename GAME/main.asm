@@ -105,7 +105,6 @@ PROJETIL_POS: .word 120, 23
 PROJETIL_CONT: .word 0
 projetil_ativo_cont: .word 0
 
-
 DESABILITA: .word 0 #desabilita o smash 
 CHITAURI_POS:	.word 280,140
 CHITAURI_ATIVO: .word 0	# 0 - padrao; 1 - ativo
@@ -440,6 +439,8 @@ GAME_LOOP:
 	# 2: verifica colisoes
 	j VER_INVENCIVEL
 	INV_CHECK:
+
+	jal VER_COLISAO
 
 	
 	# 3: movimentacao inimigos
@@ -1719,7 +1720,7 @@ VER_INVENCIVEL:	# a ser adicionado no game_loop
 	addi t1, t1, 1  # t1++
 	sw t1, 0(t0)	# contagem = t1
 
-	li t0, 15000000
+	li t0, 10000000
 	beq t0, t1, inv_volta
 		j FIM_INV
 	inv_volta:
@@ -1766,3 +1767,72 @@ SET_HULK_ATIVO:
           check_invencivel1:
 
 ret
+
+VER_COLISAO:
+
+	# verifica invencibilidade
+	la t0, invencivel
+	lw t1, 0(t0)	# t1 = estado invencivel (0 ou 1)
+	bnez t1, PULA_COLISAO
+
+	# verifica colisao chitauri
+
+#	sprite do hulk 34x34, o pixel do meio eh o (x + 17)(y + 17)
+#	sprite do chiaturi 34x34, o pixel do meio eh o (x + 17)(y + 17)
+
+	la t0, HULK_POS
+    lw s0, 0(t0)  # s0 = coordenada x do hulk
+    addi s0, s0, 17  # coordenada x do pixel central
+    lw s1, 4(t0)  # s1 = coordenada y do hulk
+
+    la t1, CHITAURI_POS
+    lw s2, 0(t1)  # s2 = coordenada x do chitauri
+    addi s2, s2, 17
+    lw s3, 4(t1)  # s3 = coordenada y do chitauri
+
+    # verifica colisao no eixo Y
+    sub t4, s1, s3  # t4 = diferença entre as coordenadas y
+    slt t5, t4, zero  # t5 = 1 se t4 < 0, caso contrário t5 = 0
+    beqz t5, abs_y_end  # se t4 >= 0, pule para abs_y_end
+    sub t4, zero, t4  # t4 = -t4 (valor absoluto)
+abs_y_end:
+    li t5, 34  # altura dos sprites
+    bge t4, t5, PULA_COLISAO_CHIT  # se a diferença for maior ou igual a 34, pula
+
+    # verifica colisao no eixo X
+    sub t2, s0, s2  # t2 = diferença entre as coordenadas x
+    slt t3, t2, zero  # t3 = 1 se t2 < 0, caso contrário t3 = 0
+    beqz t3, abs_x_end  # se t2 >= 0, pule para abs_x_end
+    sub t2, zero, t2  # t2 = -t2 (valor absoluto)
+abs_x_end:
+    li t0, 34  # largura dos sprites
+    bge t2, t0, PULA_COLISAO_CHIT  # se a diferença for maior ou igual a 34, pula
+
+		# perde 1 vida
+		la t0, vidas
+		lw t1, 0(t0)
+		addi t1, t1, -1
+		sw t1, 0(t0)
+
+		# efeito sonoro
+	    li a0, 50    # define a nota
+	    li a1,800        # define a dura??o da nota em ms
+	    li a2,120        # define o instrumento
+	    li a3,127        # define o volume
+	    li a7,31        # define o syscall
+	    ecall            # toca a nota
+	
+		# concede 1 taco
+		la t0, tacos
+		li t1, 1
+		sw t1, 0(t0)	# tacos = 1
+
+		j SET_INVENCIVEL
+
+
+	PULA_COLISAO_CHIT:
+
+	# verifica colisao projetil loki (A FAZER)
+
+	PULA_COLISAO:
+	ret
