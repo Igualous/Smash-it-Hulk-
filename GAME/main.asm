@@ -35,15 +35,11 @@ NOTAS_DERROTA:
 	61,2000,59,2000,63,2000,61,2000,59,500,61,500,63,500,66,500,64,500,71,500,64,500,62,1500,61,1500,69,400,68,500,66,400,65,500,66,400,68,500,63,500,66,1500,64,2500
 
 #inclusao das imagens
-
+.include"../DATA/fundo1_brokee.data"
 .include "../DATA/fundo1.data"
 .include "../DATA/fundo2.data"
 .include "../DATA/hulk_ativo.data"
 .include "../DATA/hulk_parado.data"
-.include "../DATA/hulk_pulando_d.data"
-.include "../DATA/hulk_pulando_e.data"
-.include "../DATA/hulk_pulando_cima.data"
-.include "../DATA/hulk_pulando_baixo.data"
 .include "../DATA/laser1.data"
 .include "../DATA/laser2.data"
 .include "../DATA/loki_ativo.data"
@@ -57,13 +53,18 @@ NOTAS_DERROTA:
 .include "../DATA/janela_quebrada.data"
 .include "../DATA/porta.data"
 .include "../DATA/porta_quebrada.data"
-.include "../DATA/tela.data"
+.include "../DATA/tela_inicio.data"
 .include "../DATA/tela_vit.data"
-.include "../DATA/tela_derrota.data"
+.include "../DATA/tela_derrota_at.data"
 .include "../DATA/hulk_cabeca.data"
 .include "../DATA/hulk_morte.data"
 .include "../DATA/score.data"
-.include "../DATA/tempo.data"
+.include "../DATA/tabela_hud.data"
+.include "../DATA/taco.data"
+.include "../DATA/hulk_ver_parado.data"
+.include "../DATA/hulk_ver_ativo.data"
+.include "../DATA/capitao_hulk.data"
+.include "../DATA/capitao_smash.data"
 
 # NUMEROS DE SCORE
 .include "../DATA/um.data"
@@ -86,10 +87,6 @@ NOTAS_DERROTA:
 .include "../DATA/dezoito.data"
 
 
-# HUD
-STR1: .string "SCORE\n"
-STR2: .string "TIME "
-
 #############  SETUP INICIAL
 # posicoes iniciais
 
@@ -106,10 +103,13 @@ PROJETIL_POS: .word 120, 23
 PROJETIL_CONT: .word 0
 projetil_ativo_cont: .word 0
 
+
+DESABILITA: .word 0 #desabilita o smash 
 CHITAURI_POS:	.word 280,140
 CHITAURI_ATIVO: .word 0	# 0 - padrao; 1 - ativo
 CHITAURI_MOVE: .word 0 # verificador que fara com que o chitauri continue se movendo
 CHIT_CONT: .word 0
+
 # endereco da janela[0][0]
 janelaX: 	.word 90
 janelaY:	.word 70
@@ -119,6 +119,10 @@ contagem: .word 0
 pontos: .word 0
 vidas: .word 3	# vidas iniciais: 3
 fase: .word 0
+
+invencivel:		 .word 0	# padrao = 0; invencivel = 1
+invencivel_cont: .word 0	# 0 a 30000000
+tacos:			 .word 0	# max: 1
 ##############
 .text
 INICIO: # endereco para reiniciar o jogo
@@ -127,7 +131,7 @@ INICIO: # endereco para reiniciar o jogo
 la a4,fase			# define a4 como numero da fase
 li t1,0xFF000000    # endereco inicial da Memoria VGA - Frame 0
 li t2,0xFF012C00    # endereco final 
-la t4, tela          # endere?o dos dados da tela na memoria
+la t4, tela_inicio          # endere?o dos dados da tela na memoria
 addi t4,t4,8        # primeiro pixels depois das informacoes de nlin ncol
 LOOP5:     beq t1,t2, mainMenuSelect        # Se for o ultimo endereco entao sai do loop
 lw t3,0(t4)        # le um conjunto de 4 pixels : word
@@ -196,8 +200,29 @@ DONE_MUSIC:
         
         
 # Carrega a fase 1 em ambos os frames
+CARREGA_FUNDO:
+	la t0, fase
+	lw t1, 0(t0)
+	bnez t1, PULA_CAP
+	la a0, capitao_hulk
+	li a1, 0
+	li a2, 0
+	jal renderImage
 
-CARREGA_FUNDO:               # carrega a imagem no frame 0
+	li a7, 32
+	li a0, 2000
+	ecall
+
+	la a0, capitao_smash
+	li a1, 0
+	li a2, 0
+	jal renderImage
+
+	li a7, 32
+	li a0, 2000
+	ecall
+	PULA_CAP:
+
 	li t1,0xFF000000	# endereco inicial da Memoria VGA - Frame 0
 	li t2,0xFF012C00	# endereco final 
 	lw t0,0(a4)			
@@ -377,7 +402,7 @@ PRINT_LOKI:
 	jal renderImage
 # Renderiza Hulk no Bitmap
 PRINT_HULK:
-	la a0, hulk_parado #carrega o tamanho da imagem em a0
+	jal SET_SPRITE_HULK #carrega o tamanho da imagem em a0
 	la t0, HULK_POS  #carrega em t0 a word que contem as posicoes xy do hulk
 	lw a1, 0(t0)  #carrega em t0 o numero que esta na primeira word de HULK_POS(esse numero e a posicao x)
 	lw a2, 4(t0)  #carrega em t0 o numero que esta na segunda word(offset da word = 4) de HULK_POS(esse numero e a posicao y)
@@ -387,10 +412,7 @@ PRINT_HULK:
 # INICIALIZA O HUD
     j PRINTA_SCORE
     FIM_SCORE:
-    j PRINTA_TEMPO
-    FIM_TEMPO:
 	j PRINTA_VIDAS
-	
 	# contagem para a movimentacao do chitauri
         la t0, CHIT_CONT
         lw t1, 0(t0)
@@ -405,8 +427,8 @@ GAME_LOOP:
 		#Esses dois registradores agirao como argumentos de comparacao para saber se 
 		#o hulk esta ou nao em alguma das bordas dos mapas. Vamos tentar achar uma solucao pra isso
 	#]
-        
-        
+
+            
        li s4, 85 #posicao X da borda esquerda, ou seja, se ele estiver na coluna 85, movimentos para a esquerda sao bloqueados
        li s5, 200 #posicao y da borda inferior, ou seja, se ele estiver na linha 200, movimentos para baixo sao bloqueados
        li s8, 185
@@ -414,6 +436,9 @@ GAME_LOOP:
 	# 1: acoes do player
 	jal KEY
 	# 2: verifica colisoes
+	j VER_INVENCIVEL
+	INV_CHECK:
+
 	
 	# 3: movimentacao inimigos
 	j MOV_LOKI
@@ -421,12 +446,8 @@ GAME_LOOP:
 	
 	j PRINT_LASER
 	LASER_CHECK:
-      
-      
-      
-	j CHIT_CHECK #verifica se o chitauri ainda precisa ser movido
-	
-	
+
+	j CHIT_CHECK
 	CHITAURI_PRINT:
          # Funcaoo para restaurar o fundo na regiao ocupada pelo Chitauri
 # Argumentos:
@@ -434,12 +455,14 @@ GAME_LOOP:
 # a1: posicao X do Chitauri
 # a2: posicao Y do Chitauri
 
+
 RESTAURA_FUNDO_CHITAURI:
+
    la t0,CHITAURI_POS
    lw a1,0(t0)
    lw a2,4(t0)
     # Carregar endereco do fundo
-    la t0, fundo1  # Endereco do fundo
+    la t0, fundo1_brokee  # Endereco do fundo
     li t1, 0xFF000000  # Endereco inicial da Memoria VGA - Frame 0
 
     # Calcular o endereco inicial no fundo
@@ -472,7 +495,9 @@ RESTAURA_COLUNA:
     lb t3, 648(t0)  # Carrega o pixel do fundo(por conta da word de altura e largura, deve-se adiantar 8 pixels)
     #o numero do tamanho da tela esta dobrado para evitar bugs do print
     sb t3, 0(t1)  # Escreve o pixel na VGA
-
+    
+ 
+	
     addi t0, t0, 1  # Proximo pixel no fundo
     addi t1, t1, 1  # Proximo pixel na VGA
     
@@ -495,6 +520,9 @@ FIM_RESTAURA:
 	lw a2, 4(t0)  #carrega em t0 o numero que esta na segunda word(offset da word = 4) de CHITAURI_POS(esse numero e a posicao y)
 	
 	jal renderImage #apos colocar todos os argumentos necessarios
+	la t0,DESABILITA
+        li t1,1
+        sw t1,0(t0) #desabilita o smash durante o chitauri
         li a7,32 #ecall de pausa
         li a0,1 #1 milesimo por pixel
         ecall
@@ -510,8 +538,6 @@ FIM_RESTAURA:
  sw t1,0(t0) #atualiza a posicao do chitauri
  
 	CHIT_END:
-	
-	
 	# 4: verifica vitoria ou derrota
 	jal VER_VITORIA
 	jal VER_DERROTA
@@ -607,11 +633,18 @@ KEY:	li t1,0xFF200000		# carrega o endere?o de controle do KDMMIO
 	li t0,'d'
 	beq t2,t0,CHAR_DIR		# se tecla pressionada for 'd', chama CHAR_DIR
 	
+	lw t5,DESABILITA  #desabilita o smash se o chitauri aparece
+         li t3,1
+         beq t5,t3,INCAPAZ
+         
 	li t0, 'e'
 	beq t2, t0, QUEBRA_JAN
-
+INCAPAZ:
 	li t0, 'v'
 	beq, t2, t0, PERDE_PONTO
+
+	li t0, 'i'
+	beq, t2, t0, SET_INVENCIVEL
 
 FIM_KEY:	ret				# retorna
 
@@ -623,7 +656,7 @@ FIM_KEY:	ret				# retorna
 #Os registradores a0,a1 e a2 sao os argumentos passados para a funcao print
 
 CHAR_CIMA:
-    la a0, hulk_parado #carrega as dimensoes do hulk em a0
+    jal SET_SPRITE_HULK #carrega as dimensoes do hulk em a0
 	la s6,HULK_POS #posicao atual
 	lw t2,0(s6) #passa a posicao antes do movimento para a antiga
 	lw a2, 4(s6)  #carrega em a2 a posicao y atual do personagem
@@ -648,7 +681,7 @@ CHAR_CIMA:
 	j GAME_LOOP
 	
 CHAR_ESQ:
-	la a0, hulk_parado #carrega as dimensoes do hulk em a0
+	jal SET_SPRITE_HULK #carrega as dimensoes do hulk em a0
 	la s6,HULK_POS
 	lw a1,0(s6)        #carrega em a1 a posicao x atual do personagem
     addi a1, a1, -50   #move o hulk para esquerda
@@ -677,7 +710,7 @@ CHAR_ESQ:
 	j ESQ_FASE1
 	
 CHAR_BAIXO:
-    la a0, hulk_parado #carrega as dimensoes do hulk em a0
+    jal SET_SPRITE_HULK #carrega as dimensoes do hulk em a0
     la s6,HULK_POS
 	lw a2, 4(s6)       #carrega em a2 a posicao y atual do personagem
 	addi a2, a2, 60   #move o hulk para baixo
@@ -701,7 +734,7 @@ CHAR_BAIXO:
 	j GAME_LOOP
 
 CHAR_DIR:
-	la a0, hulk_parado #carrega as dimensoes do hulk em a0
+	jal SET_SPRITE_HULK #carrega as dimensoes do hulk em a0
 	la s6,HULK_POS
 	lw a1,0(s6)        #carrega em a1 a posicao x atual do personagem
     addi a1, a1, 50    #move o hulk para direita
@@ -734,14 +767,14 @@ CHAR_DIR:
 QUEBRA_JAN:
        
       
-	la a0, hulk_ativo #carrega o tamanho da imagem em a0
+	jal SET_HULK_ATIVO #carrega o tamanho da imagem em a0
 	la t0, HULK_POS  #carrega em t0 a word que contem as posicoes xy do hulk
 	lw a1, 0(t0)  #carrega em t0 o numero que esta na primeira word de HULK_POS(esse numero e a posicao x)
 	lw a2, 4(t0)  #carrega em t0 o numero que esta na segunda word(offset da word = 4) de HULK_POS(esse numero e a posicao y)
 	
 	jal renderImage
        li a7,32
-       li a0,10
+       li a0,100
        ecall
        
        # efeito sonoro
@@ -941,7 +974,7 @@ VER_DERROTA:
 	la t0, vidas
 	lw t1, 0(t0)
 	bnez t1, PULA_DER
-	la a0, tela_derrota		# tela GAMEOVER
+	la a0, tela_derrota_at	# tela GAMEOVER
 	li a1, 0
 	li a2, 0
 	jal renderImage 
@@ -1050,7 +1083,7 @@ REINICIA_JOGO:	# volta tudo para as posicoes iniciais
 
 MOV_LOKI:
         
-       # contagem
+        # contagem
         la t0, LOKI_CONT #carrega em t0 o endereco da contagem atual do loki
         lw t1, 0(t0) #carrega em t1 a contagem atual do loki
         addi t1, t1, 1	# LOKI_CONT += 1
@@ -1116,7 +1149,8 @@ MOV_LOKI:
 	lw a2, 4(t0)
 
 	DONE_MOV:	j LOKI_CHECK
-#funcao que verifica se o chitauri ja apareceu	
+	
+	#funcao que verifica se o chitauri ja apareceu	
 CHIT_CHECK:
         li t1,2 #comparacao para ver se o chitauri deve sumir
 	la t0,CHITAURI_MOVE # move o verificador para t0
@@ -1167,16 +1201,35 @@ CHITAURI:
                 la t0,CHITAURI_MOVE #carrega em t0 o verificador
                 li t6,1 # valor a ser colocado no verificador
                 sw t6,0(t0) # coloca o valor no verificador
-		j CHIT_END #finaliza a aparicao do Chitauri 
 		
+		j CHIT_END
 	
 CHITAURI_ERASE: #se o chitauri chegou na ultima posicao,para de aparecer
 
 la t0,CHITAURI_MOVE #atualiza para 2 o verificador do chitauri
 li t2,2 
 sw t2,0(t0) #agora o verificador tem valor 2, ou seja, o chitauri deve sumir, pois ja se moveu completamente
+la t0, DESABILITA #reabilita o smash
+li t1,0
+sw t1,0(t0)
+	la t1,JANELAS_QUEBRADAS
+	li t2,0
+	sw t2,16(t1)
+	sw t2,20(t1)
+	sw t2,24(t2)
+	lw t0,pontos #qunado aparece, o chitauri reseta os pontos
+                li t1,1 #reseta as 3 janelas
+                sub t0,t0,t1 #pega a diferença,geralmente eh 1
+                la t2,pontos #endereço de armazenamento dos pontos
+                sw  t0,0(t2)    #att os pts 
+                
+                lw t0,contagem #qunado aparece, o chitauri reseta os pontos
+                li t1,1 #reseta as 3 janelas
+                sub t0,t0,t1 #pega a diferença,geralmente eh 1
+                la t2,contagem #endereço de armazenamento dos pontos
+                sw  t0,0(t2)    #att os pts
 j CHIT_END
-	
+
 PROJETIL:
 	la t0, PROJETIL_CONT
 	lw t1, 0(t0)	# t1 = contagem atual
@@ -1313,7 +1366,6 @@ PRINT_LASER:
 		lw a1, 0(t5)
 		lw a2, 4(t5)
 		j LASER_CHECK
-
 	
 ZEROU:
 	jal MUSICA_VITORIA
@@ -1382,10 +1434,10 @@ PRINTA_VIDAS:
 		li a2, 18
 		jal renderImage
 
-		li a1, 260
+		li a1, 265
 		jal renderImage
 
-		li a1, 230
+		li a1, 240
 		jal renderImage
 
 		j PULA_HUD
@@ -1399,10 +1451,10 @@ PRINTA_VIDAS:
 		jal renderImage
 
 		la a0, hulk_cabeca
-		li a1, 260
+		li a1, 265
 		jal renderImage
 
-		li a1, 230
+		li a1, 240
 		jal renderImage
 	
 		j PULA_HUD
@@ -1414,11 +1466,11 @@ PRINTA_VIDAS:
 		li a2, 18
 		jal renderImage
 
-		li a1, 260
+		li a1, 265
 		jal renderImage
 
 		la a0, hulk_cabeca
-		li a1, 230
+		li a1, 240
 		jal renderImage
 
 
@@ -1431,19 +1483,19 @@ PRINTA_VIDAS:
 	
 	j GAME_LOOP
 	
-PRINTA_TEMPO:
-    la a0, tempo
-    li a1, 0
-    li a2, 15
-    jal renderImage
-
-    j FIM_TEMPO
 
 PRINTA_SCORE:
-    la a0, score
+
+
+    la a0, tabela_hud
     li a1, 1
-    li a2, 35
+    li a2, 1
     jal renderImage
+
+	la a0, taco
+	li a1, 3
+	li a2, 24
+	jal renderImage
 
 	# calcula os pontos
 	la t0, contagem
@@ -1458,16 +1510,12 @@ PRINTA_SCORE:
 	bne t2, t0, pula_pontos0
 		j FIM_SCORE
 	pula_pontos0:
+	
 	li t0, 1
 	bne t2, t0, pula_pontos1
 		la a0, um
 		j fim_calc
 	pula_pontos1:
-	li t0, 1
-	bne t2, t0, pula_pontos1z
-		la a0, um
-		j fim_calc
-	pula_pontos1z:
 
 	li t0, 2
 	bne t2, t0, pula_pontos2
@@ -1575,10 +1623,120 @@ PRINTA_SCORE:
 	fim_calc:
 	
 	# PRINTA O SCORE ATUAL
-	li a1, 47
-	li a2, 40
+	li a1, 49
+	li a2, 5
 	jal renderImage
 
+	# verifica n de tacos
+	la t0, contagem
+	lw t1, 0(t0)	# pontos
+	li t2, 10
+	bne t1, t2, PULA_TACO
+
+		# seta tacos para 1
+		la t0, tacos
+		lw t1, 0(t0)	# t1 = tacos
+		li t1, 1		# t1 = 1
+		sw t1, 0(t0)	# tacos = 1
+		
+	PULA_TACO:
+
+	# PRINTA TACOS
+	la t0, tacos
+	lw t1, 0(t0)	# t1 = tacos
+	li t2, 1
+	bne t2, t1,  PULA_TACOS1
+		la a0, um
+		li a1, 34
+		li a2, 26 
+		jal renderImage
+
+	PULA_TACOS1:
+
+
     j FIM_SCORE
-    
-  
+
+SET_INVENCIVEL:	# altera o estado de invencivel para 1 quando aperta 1
+	# verfica se tem tacos
+	la t0, tacos
+	lw t1, 0(t0)	# t1 = tacos
+	beqz t1, FIM_INV
+
+	la t0, invencivel
+	li t1, 1
+	sw t1, 0(t0)
+
+	# atualiza o sprite do hulk
+	jal SET_SPRITE_HULK
+	la t0, HULK_POS
+	lw a1, 0(t0)
+	lw a2, 4(t0)
+	jal renderImage
+
+	# zera os tacos
+	la t0, tacos
+	sw zero, 0(t0)
+
+	# renderiza o score com tacos zerado
+	j PRINTA_SCORE
+
+
+VER_INVENCIVEL:	# a ser adicionado no game_loop
+	la t0, invencivel
+	lw t3, 0(t0)	# t3 = invencivel (0 ou 1)
+	li t0, 1
+	bne t0, t3, FIM_INV # se nao estiver invencivel, pula
+
+	# contagem
+	la t0, invencivel_cont
+	lw t1, 0(t0)	# t1 = contagem
+	addi t1, t1, 1  # t1++
+	sw t1, 0(t0)	# contagem = t1
+
+	li t0, 15000000
+	beq t0, t1, inv_volta
+		j FIM_INV
+	inv_volta:
+		# zera a contagem
+		la t0, invencivel_cont
+		sw zero, 0(t0)
+
+		# altera o estado para normal
+		la t0, invencivel
+		sw zero, 0(t0)	# invencivel = 0 (volta ao normal)
+
+		la t0, HULK_POS
+		lw a1, 0(t0)
+		lw a2, 4(t0)
+		la a0, hulk_parado
+		jal renderImage
+
+		j PRINTA_SCORE
+
+		FIM_INV:
+		j INV_CHECK
+
+SET_SPRITE_HULK:
+	# seta o sprite do hulk caso invencivel
+	la t0, invencivel
+	lw t1, 0(t0)
+	bnez t1, printa_vermelho
+		la a0, hulk_parado
+		j check_invencivel
+	printa_vermelho:
+		la a0, hulk_ver_parado
+          check_invencivel:
+	ret
+
+SET_HULK_ATIVO:
+	# seta o sprite do hulk ativo caso invencivel
+	la t0, invencivel
+	lw t1, 0(t0)
+	bnez t1, printa_vermelho1
+		la a0, hulk_ativo
+		j check_invencivel1
+	printa_vermelho1:
+		la a0, hulk_ver_ativo
+          check_invencivel1:
+
+ret
