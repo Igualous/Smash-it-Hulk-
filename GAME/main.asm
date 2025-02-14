@@ -111,7 +111,7 @@ janelaY:	.word 70
 
 JANELAS_QUEBRADAS: .word 0,0,0,0,0,0,0,0,0 # 0 = inteira; 1 = quebrada
 contagem: .word 0
-pontos: .word 0
+pontos: .word 0,0 #A segunda parte dos pontos avalia se o taco foi usado
 vidas: .word 3	# vidas iniciais: 3
 fase: .word 0
 
@@ -968,6 +968,7 @@ REINICIA_JOGO:	# volta tudo para as posicoes iniciais
 
 	la t0, pontos
 	sw zero, 0(t0)
+	sw zero, 4(t0)
 
 	la t0, vidas
 	li t1, 3
@@ -975,6 +976,9 @@ REINICIA_JOGO:	# volta tudo para as posicoes iniciais
 
 	la t0, fase
 	sw zero, 0(t0)
+
+	la t0,tacos
+	sw zero,0(t0)
 
 	j INICIO
 
@@ -1466,6 +1470,9 @@ PRINTA_SCORE:
 	lw t1, 0(t0)	# pontos
 	li t2, 10
 	bne t1, t2, PULA_TACO
+	la t0, pontos
+	lw t1, 4(t0)
+	bnez t1,PULA_TACO
 
 		# seta tacos para 1
 		la t0, tacos
@@ -1510,6 +1517,9 @@ SET_INVENCIVEL:	# altera o estado de invencivel para 1 quando aperta 1
 	# zera os tacos
 	la t0, tacos
 	sw zero, 0(t0)
+	la t0,pontos
+	li t1,1
+	sw t1,4(t0)
 
 	# renderiza o score com tacos zerado
 	j PRINTA_SCORE
