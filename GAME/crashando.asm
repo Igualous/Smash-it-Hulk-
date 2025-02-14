@@ -118,6 +118,7 @@ J1_BROKE: .word 0
 J2_BROKE: .word 0
 J3_BROKE: .word 0
 
+
 JANELAS_QUEBRADAS: .word 0,0,0,0,0,0,0,0,0 # 0 = inteira; 1 = quebrada
 contagem: .word 0
 pontos: .word 0
@@ -1220,20 +1221,21 @@ VERIFICA_POS_CHITAURI:
 
 	la t1,JANELAS_QUEBRADAS
 	li t2,1 #vera se a jenela foi quebrada
-	li t4,0 #se foi,sera restaurada
-	lw t3,12(t0)#verifica o estado da janela 1
+	lw t3,12(t1)#verifica o estado da janela 1
 	
 	beq t2,t3,JANELA1_QUEBRADA#se estiver quebrada
 	
 	WINDOW_2:
+	la t1,JANELAS_QUEBRADAS
 	li t2,1 #vera se a jenela foi quebrada
 	li t4,0 #se foi,sera restaurada
-	lw t3,16(t0)#verifica o estado da janela 1
+	lw t3,16(t1)#verifica o estado da janela 1
 	beq t2,t3,JANELA2_QUEBRADA
+	
 	WINDOW_3:
+	la t1,JANELAS_QUEBRADAS
 	li t2,1 #vera se a jenela foi quebrada
-	li t4,0 #se foi,sera restaurada
-	lw t3,20(t0)#verifica o estado da janela 1
+	lw t3,20(t1)#verifica o estado da janela 1
 	beq t2,t3,JANELA3_QUEBRADA
 	
 	DONE_CHECKING:
@@ -1288,9 +1290,10 @@ li t3,1
 beq t2,t3,N3#se a unica foi a 3
 
 TWICE:
-lw t1,J1_BROKE
+la t4,J1_BROKE
+lw t2, 0(t4)
 li t3,1
-beq t1,t3,ONE_AND
+beq t2,t3,ONE_AND
 
                lw t0,pontos #qunado aparece, o chitauri reseta os pontos
                 li t1,2 #reseta as 1 janela
@@ -1304,10 +1307,7 @@ beq t1,t3,ONE_AND
                 la t2,contagem #endereço de armazenamento dos pontos
                 sw  t0,0(t2)    #att os pts
             la t1,JANELAS_QUEBRADAS
-	li t4,0 #se foi,sera restaurada
 	sw t4,20(t1)#reseta a janela 3
-	la t1,JANELAS_QUEBRADAS
-	li t4,0 #se foi,sera restaurada
 	sw t4,16(t1)#reseta a janela 2
                 j CHIT_END
 
@@ -1374,10 +1374,11 @@ N1:
                 j CHIT_END
                 
  ONE_AND:
- 
-     lw t1,J2_BROKE 
-     li t2,1
-     beq t1,t2,N1_N2
+     
+     la t4,J2_BROKE
+      lw t2, 0(t4)
+       li t3,1
+     beq t3,t2,N1_N2
      
       lw t0,pontos #qunado aparece, o chitauri reseta os pontos
                 li t1,2 #reseta as 1 janela
@@ -1393,11 +1394,10 @@ N1:
             la t1,JANELAS_QUEBRADAS
 	li t4,0 #se foi,sera restaurada
 	sw t4,20(t1)#reseta a janela 3
-	la t1,JANELAS_QUEBRADAS
-	li t4,0 #se foi,sera restaurada
 	sw t4,12(t1)#reseta a janela 1
                 j CHIT_END
   N1_N2:
+  
    lw t0,pontos #qunado aparece, o chitauri reseta os pontos
                 li t1,2 #reseta as 1 janela
                 sub t0,t0,t1 #pega a diferença,geralmente eh 1
@@ -1412,8 +1412,6 @@ N1:
             la t1,JANELAS_QUEBRADAS
 	li t4,0 #se foi,sera restaurada
 	sw t4,16(t1)#reseta a janela 2
-	la t1,JANELAS_QUEBRADAS
-	li t4,0 #se foi,sera restaurada
 	sw t4,12(t1)#reseta a janela 1
                 j CHIT_END
                 
@@ -1432,11 +1430,7 @@ N1:
             la t1,JANELAS_QUEBRADAS
 	li t4,0 #se foi,sera restaurada
 	sw t4,16(t1)#reseta a janela 2
-	la t1,JANELAS_QUEBRADAS
-	li t4,0 #se foi,sera restaurada
 	sw t4,12(t1)#reseta a janela 1
-	la t1,JANELAS_QUEBRADAS
-	li t4,0 #se foi,sera restaurada
 	sw t4,20(t1)#reseta a janela 3
                 j CHIT_END
                               
