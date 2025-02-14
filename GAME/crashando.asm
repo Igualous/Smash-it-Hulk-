@@ -1221,19 +1221,19 @@ VERIFICA_POS_CHITAURI:
 	la t1,JANELAS_QUEBRADAS
 	li t2,1 #vera se a jenela foi quebrada
 	li t4,0 #se foi,sera restaurada
-	lw t3,16(t0)#verifica o estado da janela 1
+	lw t3,12(t0)#verifica o estado da janela 1
 	
 	beq t2,t3,JANELA1_QUEBRADA#se estiver quebrada
 	
 	WINDOW_2:
 	li t2,1 #vera se a jenela foi quebrada
 	li t4,0 #se foi,sera restaurada
-	lw t3,20(t0)#verifica o estado da janela 1
+	lw t3,16(t0)#verifica o estado da janela 1
 	beq t2,t3,JANELA2_QUEBRADA
 	WINDOW_3:
 	li t2,1 #vera se a jenela foi quebrada
 	li t4,0 #se foi,sera restaurada
-	lw t3,24(t0)#verifica o estado da janela 1
+	lw t3,20(t0)#verifica o estado da janela 1
 	beq t2,t3,JANELA3_QUEBRADA
 	
 	DONE_CHECKING:
@@ -1305,10 +1305,10 @@ beq t1,t3,ONE_AND
                 sw  t0,0(t2)    #att os pts
             la t1,JANELAS_QUEBRADAS
 	li t4,0 #se foi,sera restaurada
-	sw t4,24(t0)#reseta a janela 3
+	sw t4,20(t1)#reseta a janela 3
 	la t1,JANELAS_QUEBRADAS
 	li t4,0 #se foi,sera restaurada
-	sw t4,20(t0)#reseta a janela 2
+	sw t4,16(t1)#reseta a janela 2
                 j CHIT_END
 
 
@@ -1332,7 +1332,7 @@ N1:
                 
          la t1,JANELAS_QUEBRADAS
 	li t4,0 #se foi,sera restaurada
-	sw t4,16(t0)#reseta a janela 1
+	sw t4,12(t1)#reseta a janela 1
                 j CHIT_END
                 
  N2:
@@ -1351,7 +1351,7 @@ N1:
                 
          la t1,JANELAS_QUEBRADAS
 	li t4,0 #se foi,sera restaurada
-	sw t4,20(t0)#reseta a janela 2
+	sw t4,16(t1)#reseta a janela 2
                 j CHIT_END
                 
  N3:
@@ -1370,7 +1370,7 @@ N1:
                 
          la t1,JANELAS_QUEBRADAS
 	li t4,0 #se foi,sera restaurada
-	sw t4,24(t0)#reseta a janela 3
+	sw t4,20(t1)#reseta a janela 3
                 j CHIT_END
                 
  ONE_AND:
@@ -1392,10 +1392,10 @@ N1:
                 sw  t0,0(t2)    #att os pts
             la t1,JANELAS_QUEBRADAS
 	li t4,0 #se foi,sera restaurada
-	sw t4,24(t0)#reseta a janela 3
+	sw t4,20(t1)#reseta a janela 3
 	la t1,JANELAS_QUEBRADAS
 	li t4,0 #se foi,sera restaurada
-	sw t4,16(t0)#reseta a janela 1
+	sw t4,12(t1)#reseta a janela 1
                 j CHIT_END
   N1_N2:
    lw t0,pontos #qunado aparece, o chitauri reseta os pontos
@@ -1411,10 +1411,10 @@ N1:
                 sw  t0,0(t2)    #att os pts
             la t1,JANELAS_QUEBRADAS
 	li t4,0 #se foi,sera restaurada
-	sw t4,20(t0)#reseta a janela 2
+	sw t4,16(t1)#reseta a janela 2
 	la t1,JANELAS_QUEBRADAS
 	li t4,0 #se foi,sera restaurada
-	sw t4,16(t0)#reseta a janela 1
+	sw t4,12(t1)#reseta a janela 1
                 j CHIT_END
                 
         ALL:
@@ -1431,13 +1431,13 @@ N1:
                 sw  t0,0(t2)    #att os pts
             la t1,JANELAS_QUEBRADAS
 	li t4,0 #se foi,sera restaurada
-	sw t4,20(t0)#reseta a janela 2
+	sw t4,16(t1)#reseta a janela 2
 	la t1,JANELAS_QUEBRADAS
 	li t4,0 #se foi,sera restaurada
-	sw t4,16(t0)#reseta a janela 1
+	sw t4,12(t1)#reseta a janela 1
 	la t1,JANELAS_QUEBRADAS
 	li t4,0 #se foi,sera restaurada
-	sw t4,24(t0)#reseta a janela 3
+	sw t4,20(t1)#reseta a janela 3
                 j CHIT_END
                               
 PROJETIL:
