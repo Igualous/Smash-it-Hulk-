@@ -53,9 +53,9 @@ NOTAS_DERROTA:
 .include "../DATA/janela_quebrada.data"
 .include "../DATA/porta.data"
 .include "../DATA/porta_quebrada.data"
-.include "../DATA/tela.data"
+.include "../DATA/tela_inicio.data"
 .include "../DATA/tela_vit.data"
-.include "../DATA/tela_derrota.data"
+.include "../DATA/tela_derrota_at.data"
 .include "../DATA/hulk_cabeca.data"
 .include "../DATA/hulk_morte.data"
 .include "../DATA/score.data"
@@ -126,7 +126,7 @@ INICIO: # endereco para reiniciar o jogo
 la a4,fase			# define a4 como numero da fase
 li t1,0xFF000000    # endereco inicial da Memoria VGA - Frame 0
 li t2,0xFF012C00    # endereco final 
-la t4, tela          # endere?o dos dados da tela na memoria
+la t4, tela_inicio          # endere?o dos dados da tela na memoria
 addi t4,t4,8        # primeiro pixels depois das informacoes de nlin ncol
 LOOP5:     beq t1,t2, mainMenuSelect        # Se for o ultimo endereco entao sai do loop
 lw t3,0(t4)        # le um conjunto de 4 pixels : word
@@ -871,7 +871,7 @@ VER_DERROTA:
 	la t0, vidas
 	lw t1, 0(t0)
 	bnez t1, PULA_DER
-	la a0, tela_derrota		# tela GAMEOVER
+	la a0, tela_derrota_at	# tela GAMEOVER
 	li a1, 0
 	li a2, 0
 	jal renderImage 
