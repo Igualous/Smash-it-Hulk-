@@ -85,7 +85,9 @@ NOTAS_DERROTA:
 .include "../DATA/dezesseis.data"
 .include "../DATA/dezessete.data"
 .include "../DATA/dezoito.data"
-
+.include "../DATA/dezenove.data"
+.include "../DATA/vinte.data"
+.include "../DATA/vinteum.data"
 
 #############  SETUP INICIAL
 # posicoes iniciais
@@ -538,6 +540,12 @@ FIM_RESTAURA:
  sw t1,0(t0) #atualiza a posicao do chitauri
  
 	CHIT_END:
+
+	# reafirma posicao hulk
+	la t0, HULK_POS
+	lw a1, 0(t0)
+	lw a2, 4(t0)
+
 	# 4: verifica vitoria ou derrota
 	jal VER_VITORIA
 	jal VER_DERROTA
@@ -1618,6 +1626,24 @@ PRINTA_SCORE:
 		la a0, dezoito
 		j fim_calc
 	pula_pontos18:
+
+	li t0, 19
+	bne t2, t0, pula_pontos19
+		la a0, dezenove
+		j fim_calc
+	pula_pontos19:
+
+	li t0, 20
+	bne t2, t0, pula_pontos20
+		la a0, vinte
+		j fim_calc
+	pula_pontos20:
+
+	li t0, 21
+	bne t2, t0, pula_pontos21
+		la a0, vinteum
+		j fim_calc
+	pula_pontos21:
 
 
 	fim_calc:
