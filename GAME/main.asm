@@ -85,9 +85,7 @@ NOTAS_DERROTA:
 .include "../DATA/dezesseis.data"
 .include "../DATA/dezessete.data"
 .include "../DATA/dezoito.data"
-.include "../DATA/dezenove.data"
-.include "../DATA/vinte.data"
-.include "../DATA/vinteum.data"
+
 
 #############  SETUP INICIAL
 # posicoes iniciais
@@ -105,6 +103,7 @@ PROJETIL_POS: .word 120, 23
 PROJETIL_CONT: .word 0
 projetil_ativo_cont: .word 0
 
+
 DESABILITA: .word 0 #desabilita o smash 
 CHITAURI_POS:	.word 280,140
 CHITAURI_ATIVO: .word 0	# 0 - padrao; 1 - ativo
@@ -114,6 +113,11 @@ CHIT_CONT: .word 0
 # endereco da janela[0][0]
 janelaX: 	.word 90
 janelaY:	.word 70
+
+J1_BROKE: .word 0
+J2_BROKE: .word 0
+J3_BROKE: .word 0
+
 
 JANELAS_QUEBRADAS: .word 0,0,0,0,0,0,0,0,0 # 0 = inteira; 1 = quebrada
 contagem: .word 0
@@ -436,13 +440,12 @@ GAME_LOOP:
        li s9, 80
 	# 1: acoes do player
 	jal KEY
+	
 	# 2: verifica colisoes
 	j VER_INVENCIVEL
 	INV_CHECK:
 
 	jal VER_COLISAO
-
-	
 	# 3: movimentacao inimigos
 	j MOV_LOKI
 	LOKI_CHECK:
@@ -535,18 +538,18 @@ FIM_RESTAURA:
        la t0,CHITAURI_POS #posicao atual do chitauri
        lw t1,0(t0)  #carrega em a1 a posicao do chitauri (argumento para print)
        li t2,1   #verificara se ja chegou na ultima posicao do mapa
-       
+  
  beq t2,t1,CHITAURI_ERASE #se ele chegou no final, apaga
+     
  addi t1,t1,-1 # move uma coluna da animacao
  sw t1,0(t0) #atualiza a posicao do chitauri
- 
-	CHIT_END:
 
-	# reafirma posicao hulk
+  # reafirma posicao hulk
 	la t0, HULK_POS
 	lw a1, 0(t0)
 	lw a2, 4(t0)
-
+	
+	CHIT_END:
 	# 4: verifica vitoria ou derrota
 	jal VER_VITORIA
 	jal VER_DERROTA
@@ -642,13 +645,11 @@ KEY:	li t1,0xFF200000		# carrega o endere?o de controle do KDMMIO
 	li t0,'d'
 	beq t2,t0,CHAR_DIR		# se tecla pressionada for 'd', chama CHAR_DIR
 	
-	lw t5,DESABILITA  #desabilita o smash se o chitauri aparece
-         li t3,1
-         beq t5,t3,INCAPAZ
+	
          
 	li t0, 'e'
 	beq t2, t0, QUEBRA_JAN
-INCAPAZ:
+
 	li t0, 'v'
 	beq, t2, t0, PERDE_PONTO
 
@@ -674,7 +675,7 @@ CHAR_CIMA:
 	lw t0,0(a4)	#verifica a fase
 	beqz t0,CIMA_FASE1	#se for a fase1 pula essa parte
 
-	#Impedindo o hulk de subir pelo obst�culo
+	#Impedindo o hulk de subir pelo obst?culo
 	lw t0,4(s6) #guarda em t0 o y atual do hulk
 	li t1,140 #guarda 140 em t1
 	beq t0,t1,PARA #se for 140, impede de subir
@@ -709,7 +710,7 @@ CHAR_ESQ:
 	#Verificando y do hulk para o portal
 	lw t0,4(s6)	#guarda em t0 o y atual do hulk
 	li t1,80 #y=80 requisito 1 para que o hulk entre no portal
-	bne t0,t1,ESQ_FASE1 #se n�o cumprir o requisito, � como se estivesse na fase 1
+	bne t0,t1,ESQ_FASE1 #se n?o cumprir o requisito, ? como se estivesse na fase 1
 
 	#Teleportando o hulk
 	addi a1,a1,100
@@ -727,7 +728,7 @@ CHAR_BAIXO:
 	lw t0,0(a4)	#verifica a fase
 	beqz t0,BAIXO_FASE1	#se for a fase1 pula essa parte
 
-	#Impedindo o hulk de descer pelo obst�culo
+	#Impedindo o hulk de descer pelo obst?culo
 	lw t0,4(s6) #guarda em t0 o y atual do hulk
 	li t1,80 #guarda 80 em t1
 	beq t0,t1,PARA3 #se for 80, impede de descer
@@ -763,7 +764,7 @@ CHAR_DIR:
 	#Verificando y do hulk para o portal
 	lw t0,4(s6)	#guarda em t0 o y atual do hulk
 	li t1,200 #y=200 requisito 1 para que o hulk entre no portal
-	bne t0,t1,DIR_FASE1 #se n�o cumprir o requisito, � como se estivesse na fase 1
+	bne t0,t1,DIR_FASE1 #se n?o cumprir o requisito, ? como se estivesse na fase 1
 
 	#Teleportando o hulk
 	addi a1,a1,-100
@@ -1214,20 +1215,125 @@ CHITAURI:
 		j CHIT_END
 	
 CHITAURI_ERASE: #se o chitauri chegou na ultima posicao,para de aparecer
-
+    
 la t0,CHITAURI_MOVE #atualiza para 2 o verificador do chitauri
 li t2,2 
 sw t2,0(t0) #agora o verificador tem valor 2, ou seja, o chitauri deve sumir, pois ja se moveu completamente
-la t0, DESABILITA #reabilita o smash
-li t1,0
-sw t1,0(t0)
+
+
+VERIFICA_POS_CHITAURI:  
+      li s11,0
+	la t1,JANELAS_QUEBRADAS 
+	
+	li t2,1 #vera se a jenela foi quebrada 
+	lw t3,12(t1)#verifica o estado da janela 1
+
+	beq t2,t3,JANELA1_QUEBRADA#se estiver quebrada
+	  
+	WINDOW_2:
+
 	la t1,JANELAS_QUEBRADAS
-	li t2,0
-	sw t2,16(t1)
-	sw t2,20(t1)
-	sw t2,24(t2)
-	lw t0,pontos #qunado aparece, o chitauri reseta os pontos
-                li t1,1 #reseta as 3 janelas
+	li t2,1 #vera se a jenela foi quebrada
+	li t4,0 #se foi,sera restaurada
+	lw t3,16(t1)#verifica o estado da janela 1
+	
+	beq t2,t3,JANELA2_QUEBRADA
+	 
+	WINDOW_3:
+
+	la t1,JANELAS_QUEBRADAS
+	li t2,1 #vera se a jenela foi quebrada
+	lw t3,20(t1)#verifica o estado da janela 1
+	beq t2,t3,JANELA3_QUEBRADA
+	    
+	DONE_CHECKING:
+	 
+	li t2,1 #vera se a jenela foi quebrada
+	li t4,0 #se foi,sera restaurada
+	li t5,2
+	li t6,3
+	
+	beq t4,s11,NONE#se tot=0
+	     
+	beq t2,s11,ONCE#se tot=1
+	
+	
+	beq t5,s11,TWICE#se tot= 2
+	
+	beq t6,s11,ALL #se tot= 3
+	
+	
+                
+JANELA1_QUEBRADA: # SE QUEBROU A JANELA 1
+addi s11,s11,1 #TOT++
+la t2,J1_BROKE #CONFIRMA_QUEBRA DA 1
+li t3,1
+sw t3,0(t2)#ATT A JANELA QUE FOI QUEBRADA
+j WINDOW_2
+JANELA2_QUEBRADA:# SE QUEBROU A JANELA 1
+addi s11,s11,1#TOT++
+la t2,J2_BROKE#CONFIRMA_QUEBRA DA 2
+li t3,1
+sw t3,0(t2)
+j WINDOW_3                
+JANELA3_QUEBRADA:
+addi s11,s11,1# SE QUEBROU A JANELA 3
+la t2,J3_BROKE#CONFIRMA_QUEBRA DA 3
+li t3,1
+sw t3,0(t2)#ATT A JANELA QUE FOI QUEBRADA
+j DONE_CHECKING#VOLTA COM QUAIS E QUANTAS JANELAS QUEBRADAS
+
+
+NONE:
+j CHIT_END
+
+ONCE:
+la t4,J1_BROKE
+lw t2, 0(t4)
+li t3,1
+beq t2,t3,N1#se a unica foi a 1
+
+la t4,J2_BROKE
+lw t2, 0(t4)
+li t3,1
+beq t2,t3,N2#se a unica foi a 2
+
+la t4,J3_BROKE
+lw t2, 0(t4)
+li t3,1
+beq t2,t3,N3#se a unica foi a 3
+
+TWICE:
+la t4,J1_BROKE
+lw t2, 0(t4)
+li t3,1
+beq t2,t3,ONE_AND
+
+               lw t0,pontos #qunado aparece, o chitauri reseta os pontos
+                li t1,2 #reseta as 1 janela
+                sub t0,t0,t1 #pega a diferença,geralmente eh 1
+                la t2,pontos #endereço de armazenamento dos pontos
+                sw  t0,0(t2)    #att os pts 
+                
+                lw t0,contagem #qunado aparece, o chitauri reseta os pontos
+                li t1,2 #reseta as 3 janelas
+                sub t0,t0,t1 #pega a diferença,geralmente eh 1
+                la t2,contagem #endereço de armazenamento dos pontos
+                sw  t0,0(t2)    #att os pts
+            la t1,JANELAS_QUEBRADAS
+	sw t4,20(t1)#reseta a janela 3
+	sw t4,16(t1)#reseta a janela 2
+                j CHIT_END
+
+
+
+
+
+
+N1:
+
+               lw t0,pontos #qunado aparece, o chitauri reseta os pontos
+                li t1,1 #reseta as 1 janela
                 sub t0,t0,t1 #pega a diferença,geralmente eh 1
                 la t2,pontos #endereço de armazenamento dos pontos
                 sw  t0,0(t2)    #att os pts 
@@ -1237,8 +1343,111 @@ sw t1,0(t0)
                 sub t0,t0,t1 #pega a diferença,geralmente eh 1
                 la t2,contagem #endereço de armazenamento dos pontos
                 sw  t0,0(t2)    #att os pts
-j CHIT_END
+                
+         la t1,JANELAS_QUEBRADAS
+	li t4,0 #se foi,sera restaurada
+	sw t4,12(t1)#reseta a janela 1
+                j CHIT_END
+                
+ N2:
 
+               lw t0,pontos #qunado aparece, o chitauri reseta os pontos
+                li t1,1 #reseta as 1 janela
+                sub t0,t0,t1 #pega a diferença,geralmente eh 1
+                la t2,pontos #endereço de armazenamento dos pontos
+                sw  t0,0(t2)    #att os pts 
+                
+                lw t0,contagem #qunado aparece, o chitauri reseta os pontos
+                li t1,1 #reseta as 3 janelas
+                sub t0,t0,t1 #pega a diferença,geralmente eh 1
+                la t2,contagem #endereço de armazenamento dos pontos
+                sw  t0,0(t2)    #att os pts
+                
+         la t1,JANELAS_QUEBRADAS
+	li t4,0 #se foi,sera restaurada
+	sw t4,16(t1)#reseta a janela 2
+                j CHIT_END
+                
+ N3:
+
+               lw t0,pontos #qunado aparece, o chitauri reseta os pontos
+                li t1,1 #reseta as 1 janela
+                sub t0,t0,t1 #pega a diferença,geralmente eh 1
+                la t2,pontos #endereço de armazenamento dos pontos
+                sw  t0,0(t2)    #att os pts 
+                
+                lw t0,contagem #qunado aparece, o chitauri reseta os pontos
+                li t1,1 #reseta as 3 janelas
+                sub t0,t0,t1 #pega a diferença,geralmente eh 1
+                la t2,contagem #endereço de armazenamento dos pontos
+                sw  t0,0(t2)    #att os pts
+                
+         la t1,JANELAS_QUEBRADAS
+	li t4,0 #se foi,sera restaurada
+	sw t4,20(t1)#reseta a janela 3
+                j CHIT_END
+                
+ ONE_AND:
+     
+     la t4,J2_BROKE
+      lw t2, 0(t4)
+       li t3,1
+     beq t3,t2,N1_N2
+     
+      lw t0,pontos #qunado aparece, o chitauri reseta os pontos
+                li t1,2 #reseta as 1 janela
+                sub t0,t0,t1 #pega a diferença,geralmente eh 1
+                la t2,pontos #endereço de armazenamento dos pontos
+                sw  t0,0(t2)    #att os pts 
+                
+                lw t0,contagem #qunado aparece, o chitauri reseta os pontos
+                li t1,2 #reseta as 3 janelas
+                sub t0,t0,t1 #pega a diferença,geralmente eh 1
+                la t2,contagem #endereço de armazenamento dos pontos
+                sw  t0,0(t2)    #att os pts
+            la t1,JANELAS_QUEBRADAS
+	li t4,0 #se foi,sera restaurada
+	sw t4,20(t1)#reseta a janela 3
+	sw t4,12(t1)#reseta a janela 1
+                j CHIT_END
+  N1_N2:
+  
+   lw t0,pontos #qunado aparece, o chitauri reseta os pontos
+                li t1,2 #reseta as 1 janela
+                sub t0,t0,t1 #pega a diferença,geralmente eh 1
+                la t2,pontos #endereço de armazenamento dos pontos
+                sw  t0,0(t2)    #att os pts 
+                
+                lw t0,contagem #qunado aparece, o chitauri reseta os pontos
+                li t1,2 #reseta as 3 janelas
+                sub t0,t0,t1 #pega a diferença,geralmente eh 1
+                la t2,contagem #endereço de armazenamento dos pontos
+                sw  t0,0(t2)    #att os pts
+            la t1,JANELAS_QUEBRADAS
+	li t4,0 #se foi,sera restaurada
+	sw t4,16(t1)#reseta a janela 2
+	sw t4,12(t1)#reseta a janela 1
+                j CHIT_END
+                
+        ALL:
+        lw t0,pontos #qunado aparece, o chitauri reseta os pontos
+                li t1,2 #reseta as 1 janela
+                sub t0,t0,t1 #pega a diferença,geralmente eh 1
+                la t2,pontos #endereço de armazenamento dos pontos
+                sw  t0,0(t2)    #att os pts 
+                
+                lw t0,contagem #qunado aparece, o chitauri reseta os pontos
+                li t1,2 #reseta as 3 janelas
+                sub t0,t0,t1 #pega a diferença,geralmente eh 1
+                la t2,contagem #endereço de armazenamento dos pontos
+                sw  t0,0(t2)    #att os pts
+            la t1,JANELAS_QUEBRADAS
+	li t4,0 #se foi,sera restaurada
+	sw t4,16(t1)#reseta a janela 2
+	sw t4,12(t1)#reseta a janela 1
+	sw t4,20(t1)#reseta a janela 3
+                j CHIT_END
+                              
 PROJETIL:
 	la t0, PROJETIL_CONT
 	lw t1, 0(t0)	# t1 = contagem atual
@@ -1324,11 +1533,11 @@ MUSICA_VITORIA:
 	ret
 
 PRINT_PORTAIS:
-	la a0,portal1		# printa portal1 e define posi��es x=217, y=180 
+	la a0,portal1		# printa portal1 e define posi??es x=217, y=180 
 	li a1, 217
 	li a2, 180
 	jal renderImage
-	la a0,portal2		# printa portal2 e define posi��es x=60, y=60 
+	la a0,portal2		# printa portal2 e define posi??es x=60, y=60 
 	li a1, 60
 	li a2, 60
 	jal renderImage
@@ -1628,24 +1837,6 @@ PRINTA_SCORE:
 		j fim_calc
 	pula_pontos18:
 
-	li t0, 19
-	bne t2, t0, pula_pontos19
-		la a0, dezenove
-		j fim_calc
-	pula_pontos19:
-
-	li t0, 20
-	bne t2, t0, pula_pontos20
-		la a0, vinte
-		j fim_calc
-	pula_pontos20:
-
-	li t0, 21
-	bne t2, t0, pula_pontos21
-		la a0, vinteum
-		j fim_calc
-	pula_pontos21:
-
 
 	fim_calc:
 	
@@ -1720,7 +1911,7 @@ VER_INVENCIVEL:	# a ser adicionado no game_loop
 	addi t1, t1, 1  # t1++
 	sw t1, 0(t0)	# contagem = t1
 
-	li t0, 10000000
+        li t0, 10000000
 	beq t0, t1, inv_volta
 		j FIM_INV
 	inv_volta:
@@ -1767,29 +1958,22 @@ SET_HULK_ATIVO:
           check_invencivel1:
 
 ret
-
 VER_COLISAO:
-
 	# verifica invencibilidade
 	la t0, invencivel
 	lw t1, 0(t0)	# t1 = estado invencivel (0 ou 1)
 	bnez t1, PULA_COLISAO
-
 	# verifica colisao chitauri
-
 #	sprite do hulk 34x34, o pixel do meio eh o (x + 17)(y + 17)
 #	sprite do chiaturi 34x34, o pixel do meio eh o (x + 17)(y + 17)
-
 	la t0, HULK_POS
     lw s0, 0(t0)  # s0 = coordenada x do hulk
     addi s0, s0, 17  # coordenada x do pixel central
     lw s1, 4(t0)  # s1 = coordenada y do hulk
-
     la t1, CHITAURI_POS
     lw s2, 0(t1)  # s2 = coordenada x do chitauri
     addi s2, s2, 17
     lw s3, 4(t1)  # s3 = coordenada y do chitauri
-
     # verifica colisao no eixo Y
     sub t4, s1, s3  # t4 = diferença entre as coordenadas y
     slt t5, t4, zero  # t5 = 1 se t4 < 0, caso contrário t5 = 0
@@ -1798,7 +1982,6 @@ VER_COLISAO:
 abs_y_end:
     li t5, 34  # altura dos sprites
     bge t4, t5, PULA_COLISAO_CHIT  # se a diferença for maior ou igual a 34, pula
-
     # verifica colisao no eixo X
     sub t2, s0, s2  # t2 = diferença entre as coordenadas x
     slt t3, t2, zero  # t3 = 1 se t2 < 0, caso contrário t3 = 0
@@ -1807,13 +1990,11 @@ abs_y_end:
 abs_x_end:
     li t0, 34  # largura dos sprites
     bge t2, t0, PULA_COLISAO_CHIT  # se a diferença for maior ou igual a 34, pula
-
 		# perde 1 vida
 		la t0, vidas
 		lw t1, 0(t0)
 		addi t1, t1, -1
 		sw t1, 0(t0)
-
 		# efeito sonoro
 	    li a0, 50    # define a nota
 	    li a1,800        # define a dura??o da nota em ms
@@ -1826,13 +2007,8 @@ abs_x_end:
 		la t0, tacos
 		li t1, 1
 		sw t1, 0(t0)	# tacos = 1
-
 		j SET_INVENCIVEL
-
-
 	PULA_COLISAO_CHIT:
-
 	# verifica colisao projetil loki (A FAZER)
-
 	PULA_COLISAO:
 	ret
