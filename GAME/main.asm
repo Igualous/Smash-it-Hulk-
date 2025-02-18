@@ -659,7 +659,7 @@ FIM_RESTAURA:
   
        la t0,CHITAURI_POS #posicao atual do chitauri
        lw t1,0(t0)  #carrega em a1 a posicao do chitauri (argumento para print)
-       li t2,1   #verificara se ja chegou na ultima posicao do mapa
+       li t2,-1   #verificara se ja chegou na ultima posicao do mapa
   
  beq t2,t1,CHITAURI_ERASE #se ele chegou no final, apaga
      
@@ -788,6 +788,11 @@ FIM_KEY:	ret				# retorna
 #Os registradores a0,a1 e a2 sao os argumentos passados para a funcao print
 
 CHAR_CIMA:
+  # reafirma posicao hulk
+	la t0, HULK_POS
+	lw a1, 0(t0)
+	lw a2, 4(t0)
+
     jal SET_SPRITE_HULK #carrega as dimensoes do hulk em a0
 	la s6,HULK_POS #posicao atual
 	lw t2,0(s6) #passa a posicao antes do movimento para a antiga
@@ -813,6 +818,11 @@ CHAR_CIMA:
 	j GAME_LOOP
 	
 CHAR_ESQ:
+  # reafirma posicao hulk
+	la t0, HULK_POS
+	lw a1, 0(t0)
+	lw a2, 4(t0)
+
 	jal SET_SPRITE_HULK #carrega as dimensoes do hulk em a0
 	la s6,HULK_POS
 	lw a1,0(s6)        #carrega em a1 a posicao x atual do personagem
@@ -842,6 +852,11 @@ CHAR_ESQ:
 	j ESQ_FASE1
 	
 CHAR_BAIXO:
+  # reafirma posicao hulk
+	la t0, HULK_POS
+	lw a1, 0(t0)
+	lw a2, 4(t0)
+
     jal SET_SPRITE_HULK #carrega as dimensoes do hulk em a0
     la s6,HULK_POS
 	lw a2, 4(s6)       #carrega em a2 a posicao y atual do personagem
@@ -866,6 +881,11 @@ CHAR_BAIXO:
 	j GAME_LOOP
 
 CHAR_DIR:
+  # reafirma posicao hulk
+	la t0, HULK_POS
+	lw a1, 0(t0)
+	lw a2, 4(t0)
+
 	jal SET_SPRITE_HULK #carrega as dimensoes do hulk em a0
 	la s6,HULK_POS
 	lw a1,0(s6)        #carrega em a1 a posicao x atual do personagem
@@ -1524,6 +1544,14 @@ LOKI_CHECK:
 	bnez t6, LOKI_PRINT    # Se já há projétil ativo, não atira novamente	
         
 LOKI_ATIRA:
+
+	#efeito sonoro
+	li a0, 100    # define a nota
+	li a1,127        # define a dura??o da nota em ms
+	li a2,97        # define o instrumento
+	li a3,127        # define o volume
+	li a7,31        # define o syscall
+	ecall  
 
 	 li t1,1 #poe loki como ativo
 	la t0,PROJETIL_MOVE # move o verificador para t0
