@@ -1275,7 +1275,7 @@ CHITAURI:
 	la t0, contagem  #carrega em t0 a quantidade de janelas quebradas
 	lw t1, 0(t0)	# t1 = contagem de janelas quebradas
 	li t2, 4  #sera usado para verificar quantas janelas foram quebradas
-	blt t1, t2, CHIT_END	# se contagem < 4, faz nada
+	bne t1, t2, CHIT_END	# se contagem < 4, faz nada
 	
 	# gera n aleatorio de 80 a 200 em a0
 		#li a7, 42
@@ -1558,6 +1558,9 @@ LOKI_CHECK:
 	bnez t6, LOKI_PRINT    # Se já há projétil ativo, não atira novamente	
         
 LOKI_ATIRA:
+
+	la t0,invencivel
+	sw zero,0(t0)
 
 	#efeito sonoro
 	li a0, 100    # define a nota
@@ -2165,7 +2168,17 @@ abs_x_end:
 		lw t1, 0(t0)	# t1 = coordenada x atual do chitauri
 		addi t1, t1, -100
 		sw t1, 0(t0)
-
+		li t1,0xFF000000	# endereco inicial da Memoria VGA - Frame 0
+		li t2,0xFF012C00	# endereco final 
+		la t4,fundo1
+		j CONTINUAR_FUNDO_COLISAO
+		CONTINUAR_FUNDO_COLISAO: addi t4,t4,8		# primeiro pixels depois das informa??es de nlin ncol
+	LOOP_COLISAO: 	beq t1,t2,DONE		# Se for o ultimo endereco ent?o sai do loop
+		lw t3,0(t4)		# le um conjunto de 4 pixels : word
+		sw t3,0(t1)		# escreve a word na mem?ria VGA
+		addi t1,t1,4		# soma 4 ao endereco
+		addi t4,t4,4
+		j LOOP_COLISAO
 		j PRINTA_VIDAS	
 	PULA_COLISAO_CHIT:
 	
