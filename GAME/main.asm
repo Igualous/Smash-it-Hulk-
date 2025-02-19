@@ -1596,7 +1596,7 @@ LOKI_ATIRA:
 	
 	
 	li a7,32
-	li a0,500
+	li a0,200
 	ecall
 	#apaga ele atirando
 	la t0, LOKI_POS #carrega em t0 as coordenadas do loki
@@ -2105,6 +2105,7 @@ VER_COLISAO:
 	la t0, invencivel
 	lw t1, 0(t0)	# t1 = estado invencivel (0 ou 1)
 	bnez t1, PULA_COLISAO
+
 	# verifica colisao chitauri
 #	sprite do hulk 34x34, o pixel do meio eh o (x + 17)(y + 17)
 #	sprite do chiaturi 34x34, o pixel do meio eh o (x + 17)(y + 17)
@@ -2130,8 +2131,8 @@ abs_y_end:
     beqz t3, abs_x_end  # se t2 >= 0, pule para abs_x_end
     sub t2, zero, t2  # t2 = -t2 (valor absoluto)
 abs_x_end:
-    li t0, 34  # largura dos sprites
-    bge t2, t0, PULA_COLISAO_CHIT  # se a diferença for maior ou igual a 34, pula
+    li t0, 30  # largura dos sprites
+    bge t2, t0, PULA_COLISAO_CHIT  # se a diferença for maior ou igual a 30, pula
 		# perde 1 vida
 		la t0, vidas
 		lw t1, 0(t0)
@@ -2145,12 +2146,63 @@ abs_x_end:
 	    li a7,31        # define o syscall
 	    ecall            # toca a nota
 	
-		# concede 1 taco
-		la t0, tacos
-		li t1, 1
-		sw t1, 0(t0)	# tacos = 1
-		j SET_INVENCIVEL
+		# move chiaturi para fora da area de colisao
+		la t0, CHITAURI_POS
+		lw t1, 0(t0)	# t1 = coordenada x atual do chitauri
+		addi t1, t1, -100
+		sw t1, 0(t0)
+
 	PULA_COLISAO_CHIT:
-	# verifica colisao projetil loki (A FAZER)
+	
+	# verifica colisao projetil loki 
+
+#	sprite do hulk 34x34, o pixel do meio eh o (x + 17)(y + 17)
+#	sprite do projetil 20x20, o pixel do meio eh o (x + 10)(y + 10)
+	la t0, HULK_POS
+    lw s0, 0(t0)  # s0 = coordenada x do hulk
+    addi s0, s0, 17  # coordenada x do pixel central
+    lw s1, 4(t0)  # s1 = coordenada y do hulk
+    la t1, PROJETIL_POS
+    lw s2, 0(t1)  # s2 = coordenada x do projetil
+    addi s2, s2, 10
+    lw s3, 4(t1)  # s3 = coordenada y do projetil
+    # verifica colisao no eixo Y
+    sub t4, s1, s3  # t4 = diferença entre as coordenadas y
+    slt t5, t4, zero  # t5 = 1 se t4 < 0, caso contrário t5 = 0
+    beqz t5, abs_y_end1  # se t4 >= 0, pule para abs_y_end
+    sub t4, zero, t4  # t4 = -t4 (valor absoluto)
+abs_y_end1:
+    li t5, 10  # altura dos sprites
+    bge t4, t5, PULA_COLISAO_PROJ  # se a diferença for maior ou igual a 27, pula
+    # verifica colisao no eixo X
+    sub t2, s0, s2  # t2 = diferença entre as coordenadas x
+    slt t3, t2, zero  # t3 = 1 se t2 < 0, caso contrário t3 = 0
+    beqz t3, abs_x_end1  # se t2 >= 0, pule para abs_x_end
+    sub t2, zero, t2  # t2 = -t2 (valor absoluto)
+abs_x_end1:
+    li t0, 27  # largura dos sprites
+    bge t2, t0, PULA_COLISAO_PROJ  # se a diferença for maior ou igual a 27, pula
+		# perde 1 vida
+		la t0, vidas
+		lw t1, 0(t0)
+		addi t1, t1, -1
+		sw t1, 0(t0)
+		# efeito sonoro
+	    li a0, 50    # define a nota
+	    li a1,800        # define a dura??o da nota em ms
+	    li a2,120        # define o instrumento
+	    li a3,127        # define o volume
+	    li a7,31        # define o syscall
+	    ecall            # toca a nota
+
+		# move projetil para fora da area de colisao
+		 la t0, PROJETIL_POS
+		 lw t1, 4(t0)	# t1 = coordenada y atual do projetil
+		 li t3, 239
+		 mv t1, t3
+		 sw t1, 4(t0)
+		 
+	PULA_COLISAO_PROJ:
+
 	PULA_COLISAO:
 	ret
