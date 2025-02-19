@@ -778,6 +778,20 @@ KEY:	li t1,0xFF200000		# carrega o endere?o de controle do KDMMIO
 	li t0, 'i'
 	beq, t2, t0, SET_INVENCIVEL
 
+	li t0, 'z'
+	beq t2, t0, CHEAT_FASE2
+
+	li t0, 'x'
+	beq t2, t0, CHEAT_GAMEOVER_SCREEN
+
+	li t0, 'c'
+	beq t2, t0, ZEROU
+
+	li t0, 't'
+	beq t2, t0, CHEAT_POWERUP
+
+
+
 FIM_KEY:	ret				# retorna
 
 # FUNCOES DE MOVIMENTACAO
@@ -2203,9 +2217,30 @@ abs_x_end1:
 		 mv t1, t3
 		 sw t1, 4(t0)
 
-		j PRINTA_VIDAS	
-		 
+		j PRINTA_VIDAS	 
 	PULA_COLISAO_PROJ:
 
 	PULA_COLISAO:
+
 	ret
+
+CHEAT_FASE2:	# contagem = 9
+	la t0, contagem
+	li t2, 9
+	sw t2, 0(t0)
+
+	ret
+
+CHEAT_GAMEOVER_SCREEN:	# vidas = 0
+	la t0, vidas
+	sw zero, 0(t0)
+	ret
+
+CHEAT_POWERUP:
+	la t0, tacos
+	li t1, 1
+	sw t1, 0(t0)
+	ret
+
+
+
