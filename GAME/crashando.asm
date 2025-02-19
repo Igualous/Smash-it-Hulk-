@@ -65,8 +65,6 @@ NOTAS_DERROTA:
 .include "../DATA/hulk_ver_ativo.data"
 .include "../DATA/capitao_hulk.data"
 .include "../DATA/capitao_smash.data"
-.include "../DATA/atk.data"
-
 
 # NUMEROS DE SCORE
 .include "../DATA/um.data"
@@ -98,9 +96,6 @@ OLD_HULK_POS:    .word 85,200
 LOKI_POS:	.word 130,18
 OLD_LOKI_POS:	.word 130,18
 LOKI_CONT: 	.word 0
-PROJETIL_MOVE:   .word 0
-
-LASER_CONT: .word 0
 
 LASER_CONT: .word 0
 
@@ -108,10 +103,8 @@ PROJETIL_POS: .word 120, 23
 PROJETIL_CONT: .word 0
 projetil_ativo_cont: .word 0
 
-VERIFICA_FASE: .word 0
 
 DESABILITA: .word 0 #desabilita o smash 
-
 CHITAURI_POS:	.word 280,140
 CHITAURI_ATIVO: .word 0	# 0 - padrao; 1 - ativo
 CHITAURI_MOVE: .word 0 # verificador que fara com que o chitauri continue se movendo
@@ -128,7 +121,7 @@ J3_BROKE: .word 0
 
 JANELAS_QUEBRADAS: .word 0,0,0,0,0,0,0,0,0 # 0 = inteira; 1 = quebrada
 contagem: .word 0
-pontos: .word 0,0 #A segunda parte dos pontos avalia se o taco foi usado
+pontos: .word 0
 vidas: .word 3	# vidas iniciais: 3
 fase: .word 0
 
@@ -263,9 +256,6 @@ DONE:
 	sw zero,24(t1)
 	sw zero,28(t1)
 	sw zero,32(t1)
-  
-DONE_COLISAO:
-
 	j PRINT_PORTAIS
 	
 # Renderiza as janelas
@@ -450,120 +440,14 @@ GAME_LOOP:
        li s9, 80
 	# 1: acoes do player
 	jal KEY
-	
 	# 2: verifica colisoes
 	j VER_INVENCIVEL
 	INV_CHECK:
 
-	jal VER_COLISAO
+	
 	# 3: movimentacao inimigos
-	#garante que Loki nao atire enquanto chitauri esta ativo
-	lw t0,CHITAURI_MOVE
-	li t1,0
-	li t2,1
-	beq t1,t0,LASERSZ
-	beq t2,t0,LASERSZ
-
-	j LOKI_CHECK
-	
-	
-	LOKI_PRINT:
-	
-	RESTAURA_FUNDO_PROJETIL:
-
-   la t0,PROJETIL_POS
-   lw a1,0(t0)
-   lw a2,4(t0)
-    # Carregar endereco do fundo
-    lw t3,VERIFICA_FASE #verifica se esta na fase 1 ou 2
-    li t4,1
-    beq t4,t3,LVL_2
-    la t0, fundo1_brokee  # Endereco do fundo
-    addi t0, t0, 8
-    j LVL_1
-    
-    LVL_2:
-    la t0,fundo2
-    addi t0,t0,8
-    
-LVL_1:
-
-    # Calcular o endereco inicial no fundo
-    li t2, 320  # Largura do fundo
-    mul t3, a2, t2  # Y * largura do fundo
-    add t3, t3, a1  # Y * largura + X
-    add t0, t0, t3  # Endereco inicial no fundo
-
- # Endereço inicial na VGA
-    li t1, 0xFF000000
-    add t1, t1, t3  # Mesmo cálculo sem header
-   
-    
-    # Loop para copiar a regiao do fundo para a VGA
-    li t4, 8  # Altura do Chitauri
-     li t5, 8  # Largura do Chitauri
-
-RESTAURA_LINHAZ:
-
-    beqz t4, FIM_RESTAURAZ  # Se terminou todas as linhas, encerrar
-
-    
-
-RESTAURA_COLUNAZ:
-
-    beqz t5, PROXIMA_LINHAZ  # Se terminou todas as colunas ir para a proxima linha
-
-    lb t3, 0(t0)  # Carrega o pixel do fundo(por conta da word de altura e largura, deve-se adiantar 8 pixels)
-    #o numero do tamanho da tela esta dobrado para evitar bugs do print
-    sb t3, 0(t1)  # Escreve o pixel na VGA
-    
- 
-	
-    addi t0, t0, 1  # Proximo pixel no fundo
-    addi t1, t1, 1  # Proximo pixel na VGA
-    
-    addi t5, t5, -1  # Decrementa largura restante
-    
-    j RESTAURA_COLUNAZ
-
-PROXIMA_LINHAZ:
-    addi t4, t4, -1  # Decrementa altura restante
-    addi t0, t0, 312  # Avanca para a proxima linha no fundo (320 - 34)
-    addi t1, t1, 312  # Avanca para a proxima linha na VGA (320 - 34)
-    li t5, 8  # Reseta a largura
-    j RESTAURA_LINHAZ
-    
-FIM_RESTAURAZ:
-  
-  
-       la t0,PROJETIL_POS #posicao atual do chitauri
-       lw t1,4(t0)  #carrega em a1 a posicao do chitauri (argumento para print)
-       li t2,239   #verificara se ja chegou na ultima posicao do mapa
-  
-        beq t2,t1,PROJETIL_ERASE #se ele chegou no final, apaga
-           lw t1, 4(t0)           # Pega coordenada Y    
-          addi t1,t1,1 # move uma coluna da animacao
-          sw t1,4(t0) #atualiza a posicao do chitauri
- 
-	la a0, atk #carrega o tamanho da imagem em a5
-	la t0, PROJETIL_POS  #carrega em t0 a word que contem as posicoes xy do chitauri
-	lw a1, 0(t0)  #carrega em t0 o numero que esta na primeira word de CHITAURI_POS(esse numero e a posicao x)
-	lw a2, 4(t0)  #carrega em t0 o numero que esta na segunda word(offset da word = 4) de CHITAURI_POS(esse numero e a posicao y)
-	
-	jal renderImage #apos colocar todos os argumentos necessarios
-	
-        li a7,32 #ecall de pausa
-        li a0,1 #1 milesimo por pixel
-        ecall
-        
-      
-
-  # reafirma posicao hulk
-	la t0, HULK_POS
-	lw a1, 0(t0)
-	lw a2, 4(t0)
-	
-	LOKI_END:
+	j MOV_LOKI
+	LOKI_CHECK:
 	
 	j PRINT_LASER
 	LASER_CHECK:
@@ -653,128 +537,11 @@ FIM_RESTAURA:
        la t0,CHITAURI_POS #posicao atual do chitauri
        lw t1,0(t0)  #carrega em a1 a posicao do chitauri (argumento para print)
        li t2,1   #verificara se ja chegou na ultima posicao do mapa
-  
+       
  beq t2,t1,CHITAURI_ERASE #se ele chegou no final, apaga
-     
  addi t1,t1,-1 # move uma coluna da animacao
  sw t1,0(t0) #atualiza a posicao do chitauri
-
-  # reafirma posicao hulk
-	la t0, HULK_POS
-	lw a1, 0(t0)
-	lw a2, 4(t0)
-	
-	LASERSZ:
-	j PRINT_LASER
-	LASER_CHECK:
-
-	j CHIT_CHECK
-	CHITAURI_PRINT:
-         # Funcaoo para restaurar o fundo na regiao ocupada pelo Chitauri
-# Argumentos:
-# a0: endereco do fundo
-# a1: posicao X do Chitauri
-# a2: posicao Y do Chitauri
-
-
-RESTAURA_FUNDO_CHITAURI:
-
-   la t0,CHITAURI_POS
-   lw a1,0(t0)
-   lw a2,4(t0)
-    # Carregar endereco do fundo
-    lw t3,VERIFICA_FASE #verifica se esta na fase 1 ou 2
-    li t4,1
-    beq t4,t3,LVL_2z
-    la t0, fundo1_brokee  # Endereco do fundo
-    addi t0, t0, 8
-    j LVL_1z
-    
-    LVL_2z:
-    la t0,fundo2
-    addi t0,t0,8
-    
-LVL_1z:
-    # Carregar endereco do fundo
-    la t0, fundo1_brokee  # Endereco do fundo
-    li t1, 0xFF000000  # Endereco inicial da Memoria VGA - Frame 0
-
-    # Calcular o endereco inicial no fundo
-    li t2, 320  # Largura do fundo
-    mul t3, a2, t2  # Y * largura do fundo
-    add t3, t3, a1  # Y * largura + X
-    add t0, t0, t3  # Endereco inicial no fundo
-
-
-   
-    # Calcular o endereco inicial na VGA
-    mul t3, a2, t2  # Y * largura do fundo
-    add t3, t3, a1  # Y * largura + X
-    add t1, t1, t3  # Endereco inicial na VGA
-
-    # Loop para copiar a regiao do fundo para a VGA
-    li t4, 34  # Altura do Chitauri
-     li t5, 34  # Largura do Chitauri
-
-RESTAURA_LINHA:
-
-    beqz t4, FIM_RESTAURA  # Se terminou todas as linhas, encerrar
-
-    
-
-RESTAURA_COLUNA:
-
-    beqz t5, PROXIMA_LINHA  # Se terminou todas as colunas ir para a proxima linha
-
-    lb t3, 648(t0)  # Carrega o pixel do fundo(por conta da word de altura e largura, deve-se adiantar 8 pixels)
-    #o numero do tamanho da tela esta dobrado para evitar bugs do print
-    sb t3, 0(t1)  # Escreve o pixel na VGA
-    
  
-	
-    addi t0, t0, 1  # Proximo pixel no fundo
-    addi t1, t1, 1  # Proximo pixel na VGA
-    
-    addi t5, t5, -1  # Decrementa largura restante
-    
-    j RESTAURA_COLUNA
-
-PROXIMA_LINHA:
-    addi t4, t4, -1  # Decrementa altura restante
-    addi t0, t0, 286  # Avanca para a proxima linha no fundo (320 - 34)
-    addi t1, t1, 286  # Avanca para a proxima linha na VGA (320 - 34)
-    li t5, 34  # Reseta a largura
-    j RESTAURA_LINHA
-    
-FIM_RESTAURA:
-
-	la a0, chitauri #carrega o tamanho da imagem em a5
-	la t0, CHITAURI_POS  #carrega em t0 a word que contem as posicoes xy do chitauri
-	lw a1, 0(t0)  #carrega em t0 o numero que esta na primeira word de CHITAURI_POS(esse numero e a posicao x)
-	lw a2, 4(t0)  #carrega em t0 o numero que esta na segunda word(offset da word = 4) de CHITAURI_POS(esse numero e a posicao y)
-	
-	jal renderImage #apos colocar todos os argumentos necessarios
-	
-        li a7,32 #ecall de pausa
-        li a0,1 #1 milesimo por pixel
-        ecall
-        
-        MOV_CHITAURI:
-  
-       la t0,CHITAURI_POS #posicao atual do chitauri
-       lw t1,0(t0)  #carrega em a1 a posicao do chitauri (argumento para print)
-       li t2,-1   #verificara se ja chegou na ultima posicao do mapa
-  
- beq t2,t1,CHITAURI_ERASE #se ele chegou no final, apaga
-     
- addi t1,t1,-1 # move uma coluna da animacao
- sw t1,0(t0) #atualiza a posicao do chitauri
-
-  # reafirma posicao hulk
-	la t0, HULK_POS
-	lw a1, 0(t0)
-	lw a2, 4(t0)
-	
 	CHIT_END:
 	# 4: verifica vitoria ou derrota
 	jal VER_VITORIA
@@ -871,29 +638,18 @@ KEY:	li t1,0xFF200000		# carrega o endere?o de controle do KDMMIO
 	li t0,'d'
 	beq t2,t0,CHAR_DIR		# se tecla pressionada for 'd', chama CHAR_DIR
 	
-	
+	lw t5,DESABILITA  #desabilita o smash se o chitauri aparece
+         li t3,1
+         beq t5,t3,INCAPAZ
          
 	li t0, 'e'
 	beq t2, t0, QUEBRA_JAN
-
+INCAPAZ:
 	li t0, 'v'
 	beq, t2, t0, PERDE_PONTO
 
 	li t0, 'i'
 	beq, t2, t0, SET_INVENCIVEL
-
-
-	li t0, 'z'
-	beq t2, t0, CHEAT_FASE2
-
-	li t0, 'x'
-	beq t2, t0, CHEAT_GAMEOVER_SCREEN
-
-	li t0, 'c'
-	beq t2, t0, ZEROU
-
-	li t0, 't'
-	beq t2, t0, CHEAT_POWERUP
 
 FIM_KEY:	ret				# retorna
 
@@ -905,12 +661,6 @@ FIM_KEY:	ret				# retorna
 #Os registradores a0,a1 e a2 sao os argumentos passados para a funcao print
 
 CHAR_CIMA:
-
-  # reafirma posicao hulk
-	la t0, HULK_POS
-	lw a1, 0(t0)
-	lw a2, 4(t0)
-
     jal SET_SPRITE_HULK #carrega as dimensoes do hulk em a0
 	la s6,HULK_POS #posicao atual
 	lw t2,0(s6) #passa a posicao antes do movimento para a antiga
@@ -936,12 +686,6 @@ CHAR_CIMA:
 	j GAME_LOOP
 	
 CHAR_ESQ:
-
-  # reafirma posicao hulk
-	la t0, HULK_POS
-	lw a1, 0(t0)
-	lw a2, 4(t0)
-
 	jal SET_SPRITE_HULK #carrega as dimensoes do hulk em a0
 	la s6,HULK_POS
 	lw a1,0(s6)        #carrega em a1 a posicao x atual do personagem
@@ -971,26 +715,6 @@ CHAR_ESQ:
 	j ESQ_FASE1
 	
 CHAR_BAIXO:
-  # reafirma posicao hulk
-	la t0, HULK_POS
-	lw a1, 0(t0)
-	lw a2, 4(t0)
-
-
-	#Verificando y do hulk para o portal
-	lw t0,4(s6)	#guarda em t0 o y atual do hulk
-	li t1,80 #y=80 requisito 1 para que o hulk entre no portal
-	bne t0,t1,ESQ_FASE1 #se n?o cumprir o requisito, ? como se estivesse na fase 1
-
-	#Teleportando o hulk
-	addi a1,a1,100
-	li a2,200
-	sw a2, 4(s6)	   # atualiza a posicao y do personagem 
-
-	j ESQ_FASE1
-	
-CHAR_BAIXO:
-
     jal SET_SPRITE_HULK #carrega as dimensoes do hulk em a0
     la s6,HULK_POS
 	lw a2, 4(s6)       #carrega em a2 a posicao y atual do personagem
@@ -1015,7 +739,6 @@ CHAR_BAIXO:
 	j GAME_LOOP
 
 CHAR_DIR:
-
 	jal SET_SPRITE_HULK #carrega as dimensoes do hulk em a0
 	la s6,HULK_POS
 	lw a1,0(s6)        #carrega em a1 a posicao x atual do personagem
@@ -1325,65 +1048,6 @@ REINICIA_JOGO:	# volta tudo para as posicoes iniciais
 	la t0, LOKI_CONT
 	sw zero, 0(t0)
 
-	la t0,VERIFICA_FASE
-	sw zero, 0(t0)
-	la t0,CHITAURI_MOVE
-	sw zero, 0(t0)
-	
-
-	la t0, LASER_CONT
-	sw zero, 0(t0)
-
-	la t0, CHITAURI_POS
-	li t1, 280
-	li t2, 140
-	sw t1, 0(t0)
-	sw t2, 4(t0)
-        
-	la t0, CHITAURI_ATIVO
-	sw zero, 0(t0)
-
-	la t0, JANELAS_QUEBRADAS
-	sw zero, 0(t0)
-	sw zero, 4(t0)
-	sw zero, 8(t0)
-	sw zero, 12(t0)
-	sw zero, 16(t0)
-	sw zero, 20(t0)
-	sw zero, 24(t0)
-	sw zero, 28(t0)
-	sw zero, 32(t0)
-
-	la t0, contagem
-	sw zero, 0(t0)
-
-	la t0, pontos
-	sw zero, 0(t0)
-        sw zero, 4(t0)
-        
-	la t0, vidas
-	li t1, 3
-	sw t1, 0(t0)
-
-	la t0, fase
-	sw zero, 0(t0)
-
-        la t0,tacos
-	sw zero,0(t0)
-	
-	j INICIO
-
-
-	
-	#funcao que verifica se o chitauri ja apareceu	
-CHIT_CHECK:
-        li t1,2 #comparacao para ver se o chitauri deve sumir
-	la t0,CHITAURI_MOVE # move o verificador para t0
-	lw t6,0(t0)  #coloca em t6 o verificador
-	beq t1,t6,CHIT_END #se ele ja percorreu toda a tela, finaliza as operacoes do chitauri por definitivo
-	
-
-
 	la t0, LASER_CONT
 	sw zero, 0(t0)
 
@@ -1409,8 +1073,6 @@ CHIT_CHECK:
 
 	la t0, contagem
 	sw zero, 0(t0)
-	sw zero, 4(t0)
-
 
 	la t0, pontos
 	sw zero, 0(t0)
@@ -1421,9 +1083,6 @@ CHIT_CHECK:
 
 	la t0, fase
 	sw zero, 0(t0)
-
-	la t0,tacos
-	sw zero,0(t0)
 
 	j INICIO
 
@@ -1503,7 +1162,6 @@ CHIT_CHECK:
 	lw t6,0(t0)  #coloca em t6 o verificador
 	beq t1,t6,CHIT_END #se ele ja percorreu toda a tela, finaliza as operacoes do chitauri por definitivo
 	
-
 	
 	li t1,1 #comparacao para ver se o chitauri ja foi printado na posicao inicial
 	la t0,CHITAURI_MOVE #move para t0 o verificador de movimentacao do Chitauri
@@ -1514,7 +1172,6 @@ CHITAURI:
 	la t0, contagem  #carrega em t0 a quantidade de janelas quebradas
 	lw t1, 0(t0)	# t1 = contagem de janelas quebradas
 	li t2, 4  #sera usado para verificar quantas janelas foram quebradas
-
 	blt t1, t2, CHIT_END	# se contagem < 4, faz nada
 	
 	# gera n aleatorio de 80 a 200 em a0
@@ -1553,51 +1210,42 @@ CHITAURI:
 		j CHIT_END
 	
 CHITAURI_ERASE: #se o chitauri chegou na ultima posicao,para de aparecer
-    
+
 la t0,CHITAURI_MOVE #atualiza para 2 o verificador do chitauri
 li t2,2 
 sw t2,0(t0) #agora o verificador tem valor 2, ou seja, o chitauri deve sumir, pois ja se moveu completamente
+la t0, DESABILITA #reabilita o smash
+li t1,0
+sw t1,0(t0)
+VERIFICA_POS_CHITAURI:
 
-
-VERIFICA_POS_CHITAURI:  
-      li s11,0
-	la t1,JANELAS_QUEBRADAS 
-	
-	li t2,1 #vera se a jenela foi quebrada 
+	la t1,JANELAS_QUEBRADAS
+	li t2,1 #vera se a jenela foi quebrada
 	lw t3,12(t1)#verifica o estado da janela 1
-
+	
 	beq t2,t3,JANELA1_QUEBRADA#se estiver quebrada
-	  
+	
 	WINDOW_2:
-
 	la t1,JANELAS_QUEBRADAS
 	li t2,1 #vera se a jenela foi quebrada
 	li t4,0 #se foi,sera restaurada
 	lw t3,16(t1)#verifica o estado da janela 1
-	
 	beq t2,t3,JANELA2_QUEBRADA
-	 
+	
 	WINDOW_3:
-
 	la t1,JANELAS_QUEBRADAS
 	li t2,1 #vera se a jenela foi quebrada
 	lw t3,20(t1)#verifica o estado da janela 1
 	beq t2,t3,JANELA3_QUEBRADA
-	    
+	
 	DONE_CHECKING:
-	 
 	li t2,1 #vera se a jenela foi quebrada
 	li t4,0 #se foi,sera restaurada
 	li t5,2
 	li t6,3
-	
 	beq t4,s11,NONE#se tot=0
-	     
 	beq t2,s11,ONCE#se tot=1
-	
-	
 	beq t5,s11,TWICE#se tot= 2
-	
 	beq t6,s11,ALL #se tot= 3
 	
 	
@@ -1643,15 +1291,11 @@ beq t2,t3,N3#se a unica foi a 3
 
 TWICE:
 la t4,J1_BROKE
-
 lw t2, 0(t4)
 li t3,1
 beq t2,t3,ONE_AND
 
-
-               
-                lw t0,pontos #qunado aparece, o chitauri reseta os pontos
-
+               lw t0,pontos #qunado aparece, o chitauri reseta os pontos
                 li t1,2 #reseta as 1 janela
                 sub t0,t0,t1 #pega a diferença,geralmente eh 1
                 la t2,pontos #endereço de armazenamento dos pontos
@@ -1663,9 +1307,6 @@ beq t2,t3,ONE_AND
                 la t2,contagem #endereço de armazenamento dos pontos
                 sw  t0,0(t2)    #att os pts
             la t1,JANELAS_QUEBRADAS
-
-            li t4,0
-
 	sw t4,20(t1)#reseta a janela 3
 	sw t4,16(t1)#reseta a janela 2
                 j CHIT_END
@@ -1774,20 +1415,16 @@ N1:
 	sw t4,12(t1)#reseta a janela 1
                 j CHIT_END
                 
-                          
         ALL:
         lw t0,pontos #qunado aparece, o chitauri reseta os pontos
-                li t1,3 #reseta as 1 janela
-
+                li t1,2 #reseta as 1 janela
                 sub t0,t0,t1 #pega a diferença,geralmente eh 1
                 la t2,pontos #endereço de armazenamento dos pontos
                 sw  t0,0(t2)    #att os pts 
                 
                 lw t0,contagem #qunado aparece, o chitauri reseta os pontos
-
-                li t1,3 #reseta as 3 janelas
-                sub t0,t0,t1 
-
+                li t1,2 #reseta as 3 janelas
+                sub t0,t0,t1 #pega a diferença,geralmente eh 1
                 la t2,contagem #endereço de armazenamento dos pontos
                 sw  t0,0(t2)    #att os pts
             la t1,JANELAS_QUEBRADAS
@@ -1797,111 +1434,54 @@ N1:
 	sw t4,20(t1)#reseta a janela 3
                 j CHIT_END
                               
-
-
-	la t0,PROJETIL_MOVE # move o verificador para t0
-	lw t6,0(t0)  #coloca em t6 o verificador
-	bnez t6, LOKI_PRINT    # Se já há projétil ativo, não atira novamente	
-        
-LOKI_ATIRA:
-
-	la t0,invencivel
-	sw zero,0(t0)
-
-	#efeito sonoro
-	li a0, 100    # define a nota
-	li a1,127        # define a dura??o da nota em ms
-	li a2,97        # define o instrumento
-	li a3,127        # define o volume
-	li a7,31        # define o syscall
-	ecall  
-
-	 li t1,1 #poe loki como ativo
-	la t0,PROJETIL_MOVE # move o verificador para t0
-	sw t1,0(t0)  #coloca em t6 o verificador
-
 PROJETIL:
 	la t0, PROJETIL_CONT
 	lw t1, 0(t0)	# t1 = contagem atual
-
 	
-	#faz animação do Loki para ele atirar
-	la t0, LOKI_POS #carrega em t0 as coordenadas do loki
-	la a0, loki_ativo #argumento para print que indica com qual cor o sprite deve ser apagado
-	lw a1, 0(t0) #argumento para print com a posicao X do Loki
-	lw a2, 4(t0) #argumento para print com a posicao Y do Loki
-	jal renderImage  #renderiza a imagem
+	li t0, 30000000
+	blt, t1, t0, FIM_PROJ	# se contagem < t0, faz nada
 	
-		# apaga o loki antigo
-	la t0, LOKI_POS #carrega em t0 as coordenadas do loki
-	la a0, loki_fundo #argumento para print que indica com qual cor o sprite deve ser apagado
-	lw a1, 0(t0) #argumento para print com a posicao X do Loki
-	lw a2, 4(t0) #argumento para print com a posicao Y do Loki
-	jal renderImage  #renderiza a imagem
+	# zera a contagem
+	la t0, PROJETIL_CONT
+	sw zero, 0(t0)
 	
+	# define a posicao x do projetil
+	la t1, LOKI_POS
+	lw t2, 0(t1) 	# t2 = coordenada 'x' atual do loki
+	lw t3, 4(t1)	# t3 = coordenada 'y' do loki
 	
-	
-	# gera numero aleatorio entre 85 e 185
-	li a7, 42  #ecall para gerar numero aleatorio
-	li a1, 100 #garante que nao saia dos limites do mapa
-	ecall
-	addi a0, a0, 85 #move 85 colunas
-	mv t1, a0 #coloca em t1 a nova posicao Y
-	# registra a posicao
-	la t0, LOKI_POS #carrega em t0 a posicao desatualizada
-	sw t1, 0(t0)  #atualiza a posicao
 	la t0, PROJETIL_POS
-	sw t1, 0(t0)
+	sw t2, 0(t0)	# registra a coordenada 'y' fixa
 	
-
-	#faz animação do Loki para ele atirar
-	la t0, LOKI_POS #carrega em t0 as coordenadas do loki
-	la a0, loki_ativo #argumento para print que indica com qual cor o sprite deve ser apagado
-	lw a1, 0(t0) #argumento para print com a posicao X do Loki
-	lw a2, 4(t0) #argumento para print com a posicao Y do Loki
-	jal renderImage  #renderiza a imagem
+	# incrementa 1 a coordenada y
+	la t0, PROJETIL_POS
+	lw t1, 4(t0)
+	addi t1, t1, 2	# desce a posicao y do sprite de 2 em 2 pixels
+	sw t1, 4(t0)
+	li s0, 200
+	bgt t1, s0, FIM_PROJ
+	
+	# renderiza o fundo
+	#jal renderFundo
+	
+	# renderiza o projetil
+	la t0, PROJETIL_POS
+	lw a1, 0(t0)
+	lw a2, 4(t0)
+	la a0, projetil
+	jal renderImage
 	
 	
 	
 	
-	li a7,32
-	li a0,200
-	ecall
-	#apaga ele atirando
-	la t0, LOKI_POS #carrega em t0 as coordenadas do loki
-	la a0, loki_fundo #argumento para print que indica com qual cor o sprite deve ser apagado
-	lw a1, 0(t0) #argumento para print com a posicao X do Loki
-	lw a2, 4(t0) #argumento para print com a posicao Y do Loki
-	jal renderImage  #renderiza a imagem
 	
-        # renderiza o loki na nova posicao
-	la a0, loki_parado #argumento para print do sprite a ser renderizado
-	la t0, LOKI_POS # carrega em t0 as posicoes X e Y do Loki
-	lw a1, 0(t0) #argumento para print da posicao X do Loki
-	lw a2, 4(t0) # argumento Y para print da posicao Y do Loki
-	jal renderImage #renderiza a imagem
+	FIM_PROJ:
+	addi t1, t1, 1	# incrementa 1 na contagem
+	sw t1, 0(t0)	# registra a contagem
+	ret
 	
-		j LASERSZ
-	
-
-PROJETIL_ERASE: #se o chitauri chegou na ultima posicao,para de aparecer
-    
-la t0,PROJETIL_MOVE #atualiza para 2 o verificador do chitauri
-li t2,0 
-sw t2,0(t0) #agora o verificador tem valor 2, ou seja, o chitauri deve sumir, pois ja se moveu completamente
-la t3, LOKI_POS
-la t4, PROJETIL_POS
-lw t5, 4(t3)
-addi t5,t5,30
-sw t5, 4(t4) 
- j LOKI_END
-
 
 CARREGA_FASE2:
-        la t0,VERIFICA_FASE #att o verificador p fase 2
-        li t1,1
-        sw t1,0(t0)
-        
 	li t0,1
 	sw t0,0(a4)			# alterando numero da fase para 1(fase 2)
 	la s6,HULK_POS		# carrega posicao do hulk
@@ -2257,10 +1837,6 @@ PRINTA_SCORE:
 	li t2, 10
 	bne t1, t2, PULA_TACO
 
-	la t0, pontos
-	lw t1, 4(t0)
-	bnez t1,PULA_TACO
-
 		# seta tacos para 1
 		la t0, tacos
 		lw t1, 0(t0)	# t1 = tacos
@@ -2305,11 +1881,6 @@ SET_INVENCIVEL:	# altera o estado de invencivel para 1 quando aperta 1
 	la t0, tacos
 	sw zero, 0(t0)
 
-  la t0,pontos
-	li t1,1
-	sw t1,4(t0)
-	
-
 	# renderiza o score com tacos zerado
 	j PRINTA_SCORE
 
@@ -2326,7 +1897,7 @@ VER_INVENCIVEL:	# a ser adicionado no game_loop
 	addi t1, t1, 1  # t1++
 	sw t1, 0(t0)	# contagem = t1
 
-        li t0, 10000000
+	li t0, 15000000
 	beq t0, t1, inv_volta
 		j FIM_INV
 	inv_volta:
@@ -2373,163 +1944,3 @@ SET_HULK_ATIVO:
           check_invencivel1:
 
 ret
-VER_COLISAO:
-	# verifica invencibilidade
-	la t0, invencivel
-	lw t1, 0(t0)	# t1 = estado invencivel (0 ou 1)
-	bnez t1, PULA_COLISAO
-
-	# verifica colisao chitauri
-#	sprite do hulk 34x34, o pixel do meio eh o (x + 17)(y + 17)
-#	sprite do chiaturi 34x34, o pixel do meio eh o (x + 17)(y + 17)
-	la t0, HULK_POS
-    lw s0, 0(t0)  # s0 = coordenada x do hulk
-    addi s0, s0, 17  # coordenada x do pixel central
-    lw s1, 4(t0)  # s1 = coordenada y do hulk
-    la t1, CHITAURI_POS
-    lw s2, 0(t1)  # s2 = coordenada x do chitauri
-    addi s2, s2, 17
-    lw s3, 4(t1)  # s3 = coordenada y do chitauri
-    # verifica colisao no eixo Y
-    sub t4, s1, s3  # t4 = diferença entre as coordenadas y
-    slt t5, t4, zero  # t5 = 1 se t4 < 0, caso contrário t5 = 0
-    beqz t5, abs_y_end  # se t4 >= 0, pule para abs_y_end
-    sub t4, zero, t4  # t4 = -t4 (valor absoluto)
-abs_y_end:
-    li t5, 34  # altura dos sprites
-    bge t4, t5, PULA_COLISAO_CHIT  # se a diferença for maior ou igual a 34, pula
-    # verifica colisao no eixo X
-    sub t2, s0, s2  # t2 = diferença entre as coordenadas x
-    slt t3, t2, zero  # t3 = 1 se t2 < 0, caso contrário t3 = 0
-    beqz t3, abs_x_end  # se t2 >= 0, pule para abs_x_end
-    sub t2, zero, t2  # t2 = -t2 (valor absoluto)
-abs_x_end:
-    li t0, 30  # largura dos sprites
-    bge t2, t0, PULA_COLISAO_CHIT  # se a diferença for maior ou igual a 30, pula
-
-		# perde 1 vida
-		la t0, vidas
-		lw t1, 0(t0)
-		addi t1, t1, -1
-		sw t1, 0(t0)
-		# efeito sonoro
-	    li a0, 50    # define a nota
-	    li a1,800        # define a dura??o da nota em ms
-	    li a2,120        # define o instrumento
-	    li a3,127        # define o volume
-	    li a7,31        # define o syscall
-	    ecall            # toca a nota
-	
-		# move chiaturi para fora da area de colisao
-		la t0, CHITAURI_POS
-		lw t1, 0(t0)	# t1 = coordenada x atual do chitauri
-		addi t1, t1, -60
-		sw t1, 0(t0)
-
-		li t1,0xFF000000	# endereco inicial da Memoria VGA - Frame 0
-		li t2,0xFF012C00	# endereco final 
-		la t4,fundo1
-		j CONTINUAR_FUNDO_COLISAO
-		CONTINUAR_FUNDO_COLISAO: addi t4,t4,8		# primeiro pixels depois das informa??es de nlin ncol
-	LOOP_COLISAO: 	beq t1,t2,PRINT_JANELAS		# Se for o ultimo endereco ent?o sai do loop
-		lw t3,0(t4)		# le um conjunto de 4 pixels : word
-		sw t3,0(t1)		# escreve a word na mem?ria VGA
-		addi t1,t1,4		# soma 4 ao endereco
-		addi t4,t4,4
-		j LOOP_COLISAO
-		j PRINTA_VIDAS	
-	PULA_COLISAO_CHIT:
-	
-	# verifica colisao projetil loki 
-
-#	sprite do hulk 24x24 (com 7 pixels antes do x verdadeiro), o pixel do meio eh o (x + 17)(y + 17)
-#	sprite do projetil 8x8, o pixel do meio eh o (x + 10)(y + 10)
-	la t0, HULK_POS
-    lw s0, 0(t0)  # s0 = coordenada x do hulk
-    addi s0, s0, 19  # coordenada x do pixel central
-    lw s1, 4(t0)  # s1 = coordenada y do hulk
-    la t1, PROJETIL_POS
-    lw s2, 0(t1)  # s2 = coordenada x do projetil
-    addi s2, s2, 4
-    lw s3, 4(t1)  # s3 = coordenada y do projetil
-    # verifica colisao no eixo Y
-    sub t4, s1, s3  # t4 = diferença entre as coordenadas y
-    slt t5, t4, zero  # t5 = 1 se t4 < 0, caso contrário t5 = 0
-    beqz t5, abs_y_end1  # se t4 >= 0, pule para abs_y_end
-    sub t4, zero, t4  # t4 = -t4 (valor absoluto)
-abs_y_end1:
-    li t5, 10  # altura dos sprites
-    bge t4, t5, PULA_COLISAO_PROJ  # se a diferença for maior ou igual a 10, pula
-    # verifica colisao no eixo X
-    sub t2, s0, s2  # t2 = diferença entre as coordenadas x
-    slt t3, t2, zero  # t3 = 1 se t2 < 0, caso contrário t3 = 0
-    beqz t3, abs_x_end1  # se t2 >= 0, pule para abs_x_end
-    sub t2, zero, t2  # t2 = -t2 (valor absoluto)
-abs_x_end1:
-    li t0, 16  # largura dos sprites
-    bge t2, t0, PULA_COLISAO_PROJ  # se a diferença for maior ou igual a 27, pula
-		# perde 1 vida
-		la t0, vidas
-		lw t1, 0(t0)
-		addi t1, t1, -1
-		sw t1, 0(t0)
-		# efeito sonoro
-	    li a0, 50    # define a nota
-	    li a1,800        # define a dura??o da nota em ms
-	    li a2,120        # define o instrumento
-	    li a3,127        # define o volume
-	    li a7,31        # define o syscall
-	    ecall            # toca a nota
-
-		# move projetil para fora da area de colisao
-		 la t0, PROJETIL_POS
-		 lw t1, 4(t0)	# t1 = coordenada y atual do projetil
-		 li t3, 239
-		 mv t1, t3
-		 sw t1, 4(t0)
-
-		li t1,0xFF000000	# endereco inicial da Memoria VGA - Frame 0
-		li t2,0xFF012C00	# endereco final 
-		lw t0,0(a4)			
-		beqz t0,FUNDO1_COLISAO		# verifica a fase
-		la t4,fundo2
-		j CONTINUAR_FUNDO_COLISAO2
-		FUNDO1_COLISAO: la t4,fundo1		# endere?o dos dados da tela na memoria
-		CONTINUAR_FUNDO_COLISAO2: addi t4,t4,8		# primeiro pixels depois das informa??es de nlin ncol
-	LOOP_COLISAO2: 	beq t1,t2,SAIR_LOOP		# Se for o ultimo endereco ent?o sai do loop
-		lw t3,0(t4)		# le um conjunto de 4 pixels : word
-		sw t3,0(t1)		# escreve a word na mem?ria VGA
-		addi t1,t1,4		# soma 4 ao endereco
-		addi t4,t4,4
-		j LOOP_COLISAO2			# volta a verificar
-		SAIR_LOOP:
-		lw t0,0(a4)			
-		beqz t0,PRINT_JANELAS		# verifica a fase
-		j DONE_COLISAO
-		j PRINTA_VIDAS
-	PULA_COLISAO_PROJ:
-
-	PULA_COLISAO:
-
-	ret
-
-CHEAT_FASE2:	# contagem = 9
-	la t0, contagem
-	li t2, 9
-	sw t2, 0(t0)
-
-	ret
-
-CHEAT_GAMEOVER_SCREEN:	# vidas = 0
-	la t0, vidas
-	sw zero, 0(t0)
-	ret
-
-CHEAT_POWERUP:
-	la t0, tacos
-	li t1, 1
-	sw t1, 0(t0)
-
-	ret
-
-
