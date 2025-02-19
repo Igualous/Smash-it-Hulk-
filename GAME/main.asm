@@ -259,6 +259,7 @@ DONE:
 	sw zero,24(t1)
 	sw zero,28(t1)
 	sw zero,32(t1)
+DONE_COLISAO:
 	j PRINT_PORTAIS
 	
 # Renderiza as janelas
@@ -2168,12 +2169,13 @@ abs_x_end:
 		lw t1, 0(t0)	# t1 = coordenada x atual do chitauri
 		addi t1, t1, -100
 		sw t1, 0(t0)
+
 		li t1,0xFF000000	# endereco inicial da Memoria VGA - Frame 0
 		li t2,0xFF012C00	# endereco final 
 		la t4,fundo1
 		j CONTINUAR_FUNDO_COLISAO
 		CONTINUAR_FUNDO_COLISAO: addi t4,t4,8		# primeiro pixels depois das informa??es de nlin ncol
-	LOOP_COLISAO: 	beq t1,t2,DONE		# Se for o ultimo endereco ent?o sai do loop
+	LOOP_COLISAO: 	beq t1,t2,PRINT_JANELAS		# Se for o ultimo endereco ent?o sai do loop
 		lw t3,0(t4)		# le um conjunto de 4 pixels : word
 		sw t3,0(t1)		# escreve a word na mem?ria VGA
 		addi t1,t1,4		# soma 4 ao endereco
@@ -2230,7 +2232,25 @@ abs_x_end1:
 		 mv t1, t3
 		 sw t1, 4(t0)
 
-		j PRINTA_VIDAS	 
+		li t1,0xFF000000	# endereco inicial da Memoria VGA - Frame 0
+		li t2,0xFF012C00	# endereco final 
+		lw t0,0(a4)			
+		beqz t0,FUNDO1_COLISAO		# verifica a fase
+		la t4,fundo2
+		j CONTINUAR_FUNDO_COLISAO2
+		FUNDO1_COLISAO: la t4,fundo1		# endere?o dos dados da tela na memoria
+		CONTINUAR_FUNDO_COLISAO2: addi t4,t4,8		# primeiro pixels depois das informa??es de nlin ncol
+	LOOP_COLISAO2: 	beq t1,t2,SAIR_LOOP		# Se for o ultimo endereco ent?o sai do loop
+		lw t3,0(t4)		# le um conjunto de 4 pixels : word
+		sw t3,0(t1)		# escreve a word na mem?ria VGA
+		addi t1,t1,4		# soma 4 ao endereco
+		addi t4,t4,4
+		j LOOP_COLISAO2			# volta a verificar
+		SAIR_LOOP:
+		lw t0,0(a4)			
+		beqz t0,PRINT_JANELAS		# verifica a fase
+		j DONE_COLISAO
+		j PRINTA_VIDAS
 	PULA_COLISAO_PROJ:
 
 	PULA_COLISAO:
