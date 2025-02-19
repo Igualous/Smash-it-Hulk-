@@ -2167,7 +2167,7 @@ abs_x_end:
 		# move chiaturi para fora da area de colisao
 		la t0, CHITAURI_POS
 		lw t1, 0(t0)	# t1 = coordenada x atual do chitauri
-		addi t1, t1, -100
+		addi t1, t1, -60
 		sw t1, 0(t0)
 
 		li t1,0xFF000000	# endereco inicial da Memoria VGA - Frame 0
@@ -2273,4 +2273,6 @@ CHEAT_POWERUP:
 	la t0, tacos
 	li t1, 1
 	sw t1, 0(t0)
+
 	ret
+
