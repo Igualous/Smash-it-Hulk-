@@ -2171,15 +2171,15 @@ abs_x_end:
 	
 	# verifica colisao projetil loki 
 
-#	sprite do hulk 34x34, o pixel do meio eh o (x + 17)(y + 17)
-#	sprite do projetil 20x20, o pixel do meio eh o (x + 10)(y + 10)
+#	sprite do hulk 24x24 (com 7 pixels antes do x verdadeiro), o pixel do meio eh o (x + 17)(y + 17)
+#	sprite do projetil 8x8, o pixel do meio eh o (x + 10)(y + 10)
 	la t0, HULK_POS
     lw s0, 0(t0)  # s0 = coordenada x do hulk
-    addi s0, s0, 17  # coordenada x do pixel central
+    addi s0, s0, 19  # coordenada x do pixel central
     lw s1, 4(t0)  # s1 = coordenada y do hulk
     la t1, PROJETIL_POS
     lw s2, 0(t1)  # s2 = coordenada x do projetil
-    addi s2, s2, 10
+    addi s2, s2, 4
     lw s3, 4(t1)  # s3 = coordenada y do projetil
     # verifica colisao no eixo Y
     sub t4, s1, s3  # t4 = diferença entre as coordenadas y
@@ -2188,14 +2188,14 @@ abs_x_end:
     sub t4, zero, t4  # t4 = -t4 (valor absoluto)
 abs_y_end1:
     li t5, 10  # altura dos sprites
-    bge t4, t5, PULA_COLISAO_PROJ  # se a diferença for maior ou igual a 27, pula
+    bge t4, t5, PULA_COLISAO_PROJ  # se a diferença for maior ou igual a 10, pula
     # verifica colisao no eixo X
     sub t2, s0, s2  # t2 = diferença entre as coordenadas x
     slt t3, t2, zero  # t3 = 1 se t2 < 0, caso contrário t3 = 0
     beqz t3, abs_x_end1  # se t2 >= 0, pule para abs_x_end
     sub t2, zero, t2  # t2 = -t2 (valor absoluto)
 abs_x_end1:
-    li t0, 27  # largura dos sprites
+    li t0, 16  # largura dos sprites
     bge t2, t0, PULA_COLISAO_PROJ  # se a diferença for maior ou igual a 27, pula
 		# perde 1 vida
 		la t0, vidas
