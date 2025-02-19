@@ -2152,6 +2152,7 @@ abs_x_end:
 		addi t1, t1, -100
 		sw t1, 0(t0)
 
+		j PRINTA_VIDAS	
 	PULA_COLISAO_CHIT:
 	
 	# verifica colisao projetil loki 
@@ -2201,6 +2202,8 @@ abs_x_end1:
 		 li t3, 239
 		 mv t1, t3
 		 sw t1, 4(t0)
+
+		j PRINTA_VIDAS	
 		 
 	PULA_COLISAO_PROJ:
 
